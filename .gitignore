@@ -151,7 +151,6 @@ data/
 
 # Logs / local outputs
 *.parquet
-*.csv
 *.jsonl
 
 # Docker
