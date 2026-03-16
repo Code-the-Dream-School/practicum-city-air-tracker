@@ -1,0 +1,864 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 1516 >>
+stream
+BT
+/F2 20 Tf
+1 0 0 1 54 738 Tm
+(City Air Tracker GitHub Guide) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 695 Tm
+(Purpose) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 658 Tm
+(This guide explains how contributors in the City Air Tracker project should:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 613 Tm
+(- create a new development branch from `main`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 583 Tm
+(- name branches in a consistent way) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 553 Tm
+(- push work to GitHub) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 523 Tm
+(- open and manage a pull request \(PR\)) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 478 Tm
+(Use this workflow for any feature, bug fix, or documentation update.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 433 Tm
+(Branching Model) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 396 Tm
+(In this repository, new work should start from the `main` branch.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 351 Tm
+(Create a separate branch for each task. Do not commit new work directly to `main`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 306 Tm
+(Based on the branches already in this repo, the current naming pattern is:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 261 Tm
+(feature/AIR-###-short-description) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 231 Tm
+(Examples from this project:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 186 Tm
+(- `feature/AIR-006-llm-7day-air-quality-forecasting`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 156 Tm
+(- `feature/AIR-009-store-gold-parquet-dataset-in-azure-cloud-storage`) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 111 Tm
+(Branch Naming Rules) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 74 Tm
+(Follow these rules when creating a branch:) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Length 1438 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(1. Start with `feature/` for feature work.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(2. Include the ticket or issue id, such as `AIR-010`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 648 Tm
+(3. Add a short lowercase description separated by hyphens.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 618 Tm
+(4. Do not use spaces.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(5. Keep the name specific enough that reviewers can understand the goal.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 543 Tm
+(Recommended format:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 498 Tm
+(feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 468 Tm
+(Create a New Development Branch) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 431 Tm
+(From the project root, run:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 386 Tm
+(git checkout main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 371 Tm
+(git pull origin main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 356 Tm
+(git checkout -b feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(This does three things:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 281 Tm
+(1. switches to `main`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 251 Tm
+(2. updates your local `main` with the latest code from GitHub) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 221 Tm
+(3. creates and checks out your new branch) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 176 Tm
+(You can confirm your branch with:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 131 Tm
+(git branch --show-current) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 101 Tm
+(Work on Your Feature Branch) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Length 1507 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(Make your code changes in your new branch. Commit small, meaningful updates instead of) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(one very large commit.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(A typical workflow looks like this:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 633 Tm
+(git status) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 618 Tm
+(git add .) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 603 Tm
+(git commit -m "Add dashboard filter for city comparison") Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 573 Tm
+(Tips:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 528 Tm
+(- Commit messages should explain what changed.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 498 Tm
+(- Test your work before pushing.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 468 Tm
+(- Keep your branch focused on one task or ticket.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 423 Tm
+(Push the Branch to GitHub) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(The first time you push a new branch, use:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 341 Tm
+(git push -u origin feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 311 Tm
+(After that, you can usually push with:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 266 Tm
+(git push) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 236 Tm
+(The `-u` option connects your local branch to the remote branch on GitHub so future) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 221 Tm
+(pushes are simpler.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 176 Tm
+(Open a Pull Request on GitHub) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 139 Tm
+(After pushing your branch:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 94 Tm
+(1. Go to the repository on GitHub.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Length 1661 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(2. GitHub will often show a `Compare & pull request` button for your recently pushed) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(   branch.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(3. If it does not, open the `Pull requests` tab and choose `New pull request`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(4. Set the base branch to `main`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(5. Set the compare branch to your feature branch.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(Before creating the PR, review the diff to make sure only your intended changes are) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 573 Tm
+(included.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 528 Tm
+(What to Write in a Pull Request) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 491 Tm
+(A good PR should help reviewers understand the change quickly.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 446 Tm
+(Include:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 401 Tm
+(- a clear title) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(- a short summary of what changed) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 341 Tm
+(- why the change was needed) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 311 Tm
+(- testing notes) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 281 Tm
+(- screenshots if the change affects the dashboard UI) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 236 Tm
+(Example PR title:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 191 Tm
+(AIR-010 Add dashboard filter for city comparison) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 161 Tm
+(Example PR description:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 116 Tm
+(## Summary) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 101 Tm
+(- adds a city filter to the comparison page) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 86 Tm
+(- updates the data query to respect the selected city) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 71 Tm
+( ) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Length 1648 >>
+stream
+BT
+/F3 10 Tf
+1 0 0 1 54 738 Tm
+(## Testing) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 723 Tm
+(- ran the pipeline locally) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 708 Tm
+(- launched the Streamlit dashboard) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 693 Tm
+(- verified the filter updates the displayed charts) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 663 Tm
+(How to Review and Respond to Feedback) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 626 Tm
+(After you open a PR:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 581 Tm
+(1. Reviewers may leave comments or request changes.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 551 Tm
+(2. Make the requested updates on the same feature branch.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 521 Tm
+(3. Commit and push again.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 491 Tm
+(4. The PR updates automatically.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 446 Tm
+(You do not need to open a new PR for review feedback if the work is part of the same) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 431 Tm
+(change.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(When feedback is addressed:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 341 Tm
+(- reply to comments when useful) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 311 Tm
+(- mark conversations as resolved if your team uses that workflow) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 281 Tm
+(- re-request review if needed) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 236 Tm
+(Keep Your Branch Up to Date) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 199 Tm
+(If `main` changes while your PR is still open, update your branch so merge conflicts are) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 184 Tm
+(less likely.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 139 Tm
+(One simple approach is:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 94 Tm
+(git checkout main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 79 Tm
+(git pull origin main) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Length 1433 >>
+stream
+BT
+/F3 10 Tf
+1 0 0 1 54 738 Tm
+(git checkout feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 723 Tm
+(git merge main) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(If Git reports conflicts:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 648 Tm
+(1. open the conflicting files) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 618 Tm
+(2. choose the correct final code) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(3. save the files) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 558 Tm
+(4. stage the resolved files) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 528 Tm
+(5. commit the merge) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 483 Tm
+(Then push again:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 438 Tm
+(git push) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 408 Tm
+(Merge and Clean Up) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(When the PR is approved and checks pass:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(1. merge the PR in GitHub using the method your team prefers) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 296 Tm
+(2. delete the branch on GitHub if it is no longer needed) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 266 Tm
+(3. clean up your local branch) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 221 Tm
+(Local cleanup:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 176 Tm
+(git checkout main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 161 Tm
+(git pull origin main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 146 Tm
+(git branch -d feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 116 Tm
+(Common Mistakes to Avoid) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 79 Tm
+(- committing directly to `main`) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Length 1548 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(- creating one branch for multiple unrelated tasks) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(- using vague branch names such as `feature/my-work`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(- opening a PR with unrelated file changes) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(- waiting too long to sync with `main`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 603 Tm
+(- ignoring review comments) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 558 Tm
+(Quick Reference) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 521 Tm
+(Create a branch:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 476 Tm
+(git checkout main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 461 Tm
+(git pull origin main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 446 Tm
+(git checkout -b feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 416 Tm
+(Commit work:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 371 Tm
+(git add .) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 356 Tm
+(git commit -m "Add dashboard filter for city comparison") Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(Push to GitHub:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 281 Tm
+(git push -u origin feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 251 Tm
+(Update branch with latest `main`:) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 206 Tm
+(git checkout main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 191 Tm
+(git pull origin main) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 176 Tm
+(git checkout feature/AIR-010-add-dashboard-filter) Tj
+ET
+BT
+/F3 10 Tf
+1 0 0 1 54 161 Tm
+(git merge main) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 131 Tm
+(Final Reminder) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 94 Tm
+(The safest team workflow for this repository is:) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Length 517 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(1. start from `main`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(2. create one feature branch per task) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(3. use the `feature/AIR-###-short-description` pattern) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(4. push your branch to GitHub) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 603 Tm
+(5. open a PR into `main`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 573 Tm
+(6. respond to review feedback in the same branch) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 543 Tm
+(7. merge only after review) Tj
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Pages /Count 8 /Kids [ 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R ] >>
+endobj
+13 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 4 0 R >>
+endobj
+14 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 5 0 R >>
+endobj
+15 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 6 0 R >>
+endobj
+16 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 7 0 R >>
+endobj
+17 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 8 0 R >>
+endobj
+18 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 9 0 R >>
+endobj
+19 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 10 0 R >>
+endobj
+20 0 obj
+<< /Type /Page /Parent 12 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 11 0 R >>
+endobj
+21 0 obj
+<< /Type /Catalog /Pages 12 0 R >>
+endobj
+xref
+0 22
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000154 00000 n 
+0000000222 00000 n 
+0000001790 00000 n 
+0000003280 00000 n 
+0000004839 00000 n 
+0000006552 00000 n 
+0000008252 00000 n 
+0000009737 00000 n 
+0000011338 00000 n 
+0000011907 00000 n 
+0000012017 00000 n 
+0000012165 00000 n 
+0000012313 00000 n 
+0000012461 00000 n 
+0000012609 00000 n 
+0000012757 00000 n 
+0000012905 00000 n 
+0000013054 00000 n 
+0000013203 00000 n 
+trailer
+<< /Size 22 /Root 21 0 R >>
+startxref
+13254
+%%EOF
