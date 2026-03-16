@@ -1,0 +1,1704 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 1992 >>
+stream
+BT
+/F2 20 Tf
+1 0 0 1 54 738 Tm
+(City Air Tracker Application Architecture Guide) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 695 Tm
+(Audience and purpose) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 658 Tm
+(This document explains how the City Air Tracker application is structured, why it is) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 643 Tm
+(built this way, and what its main terms mean. It is written for programmers who may be) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 628 Tm
+(comfortable with web applications or scripts but are new to data pipelines.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 583 Tm
+(The guide is based on the code in the repository, not only on the existing diagrams.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 568 Tm
+(Where the implementation is a proof of concept, that is called out directly.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 523 Tm
+(What this application does) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 486 Tm
+(City Air Tracker is a small batch data pipeline plus a read-only dashboard.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 441 Tm
+(At a high level, the application:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 396 Tm
+(1. Reads a list of cities from `configs/cities.csv`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 366 Tm
+(2. Converts each city into latitude and longitude using the OpenWeather geocoding API.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 336 Tm
+(3. Downloads historical air-pollution measurements for each city from OpenWeather.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 306 Tm
+(4. Stores the API responses as raw JSON files.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 276 Tm
+(5. Transforms those raw files into a cleaner analytical dataset in Parquet format.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 246 Tm
+(6. Optionally publishes the same data to PostgreSQL.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 216 Tm
+(7. Displays the final dataset in a Streamlit dashboard.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 171 Tm
+(This is an ETL-style workflow:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 126 Tm
+(- Extract means reading data from external systems.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 96 Tm
+(- Transform means reshaping and enriching that data.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Length 1986 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(- Load means writing the prepared result to storage for later use.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 693 Tm
+(Big-picture architecture) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 656 Tm
+(The repository contains two main runtime services and a shared set of files:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 611 Tm
+(- `services/pipeline`: the batch job that collects and prepares air-quality data.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 581 Tm
+(- `services/dashboard`: the Streamlit application that reads the prepared dataset.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 551 Tm
+(- `configs`: input configuration such as the city list.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 521 Tm
+(- `data/raw`: cached API responses and manifests.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 491 Tm
+(- `data/gold`: the final analytical dataset used by the dashboard.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 461 Tm
+(- `docs`: diagrams and supporting documentation.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 416 Tm
+(The architecture intentionally separates data collection from data presentation. The) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 401 Tm
+(dashboard does not call external APIs directly. Instead, it only reads the already) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(prepared gold dataset.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 341 Tm
+(That separation keeps the dashboard simple and makes the pipeline the single place where) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(API access, caching, and normalization happen.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 281 Tm
+(Main execution flow) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 244 Tm
+(The entry point for the pipeline is `services/pipeline/run_pipeline.py`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 199 Tm
+(When the pipeline starts, it does the following:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 154 Tm
+(1. Reads runtime settings from the configuration layer.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 124 Tm
+(2. Creates the raw and gold output directories if they do not exist.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 94 Tm
+(3. Computes a time window ending at the current UTC time.) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Length 1861 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(4. Loads the list of configured cities.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(5. Loops through each city and runs the extract phase.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(6. Passes the collected raw files into the transform phase.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 648 Tm
+(7. Writes the final dataset in the load phase.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 603 Tm
+(This means the pipeline is orchestrated by one simple command-line program rather than) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(by a workflow engine such as Airflow or Prefect. For a proof of concept, that is a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 573 Tm
+(practical choice because the control flow is easy to follow and debug.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 528 Tm
+(Pipeline layers) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 491 Tm
+(Input configuration) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 454 Tm
+(The pipeline begins with `services/pipeline/src/pipeline/extract/cities.py`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 409 Tm
+(`read_cities\(\)` reads `configs/cities.csv` into a `CitySpec` data class with:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 364 Tm
+(- `city`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 334 Tm
+(- `country_code`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 304 Tm
+(- optional `state`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 259 Tm
+(This is the first design decision worth noticing: cities are treated as configuration,) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 244 Tm
+(not as database records. That keeps the pipeline easy to run locally and easy to) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 229 Tm
+(understand. The tradeoff is that changing the city list requires editing a file instead) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 214 Tm
+(of updating an admin screen.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 169 Tm
+(Extract layer) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 132 Tm
+(The extract layer is split into small modules:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 87 Tm
+(- `geocoding.py`) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Length 1834 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(- `openweather_air_pollution.py`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(- `http.py`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(### Geocoding) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 618 Tm
+(`geocode_city\(\)` takes a city, country code, and optional state, then calls the) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 603 Tm
+(OpenWeather direct geocoding API.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 558 Tm
+(Before making the API call, it checks whether a cached geocoding file already exists in:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 513 Tm
+(- `data/raw/openweather/geocoding`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 468 Tm
+(If a cached file exists, the pipeline reuses it. If not, it calls the API and writes a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 453 Tm
+(JSON cache file.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 408 Tm
+(This is an important pipeline idea: raw data is often stored even when it looks) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 393 Tm
+(redundant. Caching raw responses makes reruns faster and gives a record of what the) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 378 Tm
+(external system returned.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 333 Tm
+(### Air pollution history) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 288 Tm
+(`fetch_air_pollution_history\(\)` calls the OpenWeather historical air-pollution endpoint) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 273 Tm
+(for one city and one time window.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 228 Tm
+(For each run, the function:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 183 Tm
+(- builds a deterministic `geo_id` from city, country code, latitude, and longitude) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 153 Tm
+(- creates a city-specific directory under `data/raw/openweather/air_pollution/history`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 123 Tm
+(- writes the API response to a timestamped JSON file) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 93 Tm
+(- writes a manifest file to `data/raw/openweather/_manifests`) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Length 1990 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(The manifest is small metadata about the extract step, such as run id, request window,) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(status code, record count, and output path. This is a common pipeline pattern because it) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(provides lightweight traceability without requiring a separate metadata service.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 648 Tm
+(### HTTP behavior) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 603 Tm
+(`http.py` contains two pieces of cross-cutting infrastructure:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 558 Tm
+(- `RateLimiter`, which spaces requests based on a configured maximum calls per minute) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 528 Tm
+(- `get_with_retries\(\)`, which retries transient failures and handles HTTP 429 backoff) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 483 Tm
+(This logic is centralized instead of being repeated in each extractor. That keeps API) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 468 Tm
+(access rules consistent and makes the extractor modules easier to read.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 423 Tm
+(Transform layer) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(The main transform code is in) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(`services/pipeline/src/pipeline/transform/openweather_air_pollution_transform.py`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(`build_gold_from_raw\(\)` reads every raw JSON file produced by the extract layer and) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 311 Tm
+(converts them into a single pandas DataFrame.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 266 Tm
+(For each measurement row, the transform creates:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 221 Tm
+(- event time as `ts`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 191 Tm
+(- location fields such as `city`, `country_code`, `lat`, `lon`, and `geo_id`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 161 Tm
+(- the OpenWeather AQI value) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 131 Tm
+(- pollution component measurements such as `pm2_5`, `pm10`, `o3`, and `no2`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 86 Tm
+(After parsing, the transform:) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Length 1962 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(- converts timestamps to UTC-aware pandas timestamps) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(- sorts rows by city and time) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(- removes duplicates by `geo_id` and `ts`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(- computes a 24-sample rolling average for `pm2_5`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 603 Tm
+(- adds a human-readable AQI category) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 573 Tm
+(- adds a derived risk score) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 528 Tm
+(The transform code assumes the OpenWeather history endpoint returns hourly observations,) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 513 Tm
+(so a 24-row rolling window represents about 24 hours. This is a convenient proof-of-) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 498 Tm
+(concept assumption, but it would need stronger validation in a production pipeline.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 453 Tm
+(### Derived fields) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 408 Tm
+(`risk_scoring.py` adds two fields:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 363 Tm
+(- `aqi_category`: maps numeric AQI values 1 through 5 into labels such as Good or Very) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 348 Tm
+(  Poor) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 318 Tm
+(- `risk_score`: a simple weighted formula that combines AQI and selected pollutant) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 303 Tm
+(  values) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 258 Tm
+(The risk score is explicitly rule-based and simple. That is a design choice in favor of) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 243 Tm
+(readability over scientific sophistication. It gives the dashboard a single sortable) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 228 Tm
+(metric without introducing a machine-learning dependency or complex domain logic.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 183 Tm
+(Load layer) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 146 Tm
+(The load code lives in `services/pipeline/src/pipeline/load/storage.py`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 101 Tm
+(`publish_outputs\(\)` always writes the transformed DataFrame to:) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Length 1830 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(- `data/gold/air_pollution_gold.parquet`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(If `use_postgres` is enabled in the settings, it also writes the same DataFrame to a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(PostgreSQL table using `to_sql\(..., if_exists="replace"\)`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(This reveals another major design decision:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(- Parquet is the default source of truth for analytics and dashboard reads.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 558 Tm
+(- PostgreSQL is optional and behaves more like a publishing target than the primary) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 543 Tm
+(  storage layer.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 498 Tm
+(For a small local pipeline, Parquet is a good fit because it is compact, columnar, and) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 483 Tm
+(easy for pandas to read. The tradeoff is that file-based outputs are less convenient) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 468 Tm
+(than a database when many concurrent readers or incremental updates are needed.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 423 Tm
+(Dashboard architecture) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(The dashboard code is in `services/dashboard/app`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 341 Tm
+(The dashboard has one home page and two analysis pages:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 296 Tm
+(- `Home.py`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 266 Tm
+(- `pages/1_City_Trends.py`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 236 Tm
+(- `pages/2_Compare_Cities.py`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 191 Tm
+(All pages read the gold Parquet dataset directly. The dashboard does not perform) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 176 Tm
+(additional extraction or transformation beyond lightweight filtering and plotting.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 131 Tm
+(### Home page) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 86 Tm
+(The home page:) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Length 1451 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(- checks whether the gold dataset exists) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(- loads the Parquet file into pandas) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(- displays simple summary metrics) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(- shows a preview table) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(### City Trends page) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 543 Tm
+(The trends page:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 498 Tm
+(- lets the user choose one `geo_id`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 468 Tm
+(- lets the user choose one metric) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 438 Tm
+(- plots that metric over time with Plotly) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 408 Tm
+(- shows recent rows for that city) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 363 Tm
+(### Compare Cities page) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 318 Tm
+(The comparison page:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 273 Tm
+(- computes the latest row for each city) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 243 Tm
+(- lets the user choose one metric) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 213 Tm
+(- plots the latest value per city) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 183 Tm
+(- displays the same values in a table) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 138 Tm
+(This dashboard is intentionally thin. Most data systems become easier to maintain when) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 123 Tm
+(expensive or reusable logic stays in the pipeline, while the dashboard acts mainly as a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 108 Tm
+(reader of prepared data.) Tj
+ET
+endstream
+endobj
+12 0 obj
+<< /Length 1672 >>
+stream
+BT
+/F2 14 Tf
+1 0 0 1 54 738 Tm
+(Data storage model) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 701 Tm
+(The application uses a layered storage approach that is common in analytics work:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 656 Tm
+(- Config layer: `configs/cities.csv`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 626 Tm
+(- Raw layer: JSON responses and manifests under `data/raw`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 596 Tm
+(- Gold layer: curated Parquet dataset under `data/gold`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 566 Tm
+(- Optional serving layer: PostgreSQL table for downstream consumers) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 521 Tm
+(For programmers who are new to pipelines, the main idea is that each layer has a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 506 Tm
+(different purpose.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 461 Tm
+(- The config layer defines what to collect.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 431 Tm
+(- The raw layer preserves original external responses.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 401 Tm
+(- The gold layer is cleaned, structured, and ready for analysis.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(- The serving layer is optional and exists to make consumption easier for other tools.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 326 Tm
+(Runtime and deployment model) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 289 Tm
+(The repository can run either locally in a Python virtual environment or through Docker) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 274 Tm
+(Compose.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 229 Tm
+(`docker-compose.yml` defines four services:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 184 Tm
+(- `pipeline`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 154 Tm
+(- `dashboard`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 124 Tm
+(- `postgres`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 94 Tm
+(- `adminer`) Tj
+ET
+endstream
+endobj
+13 0 obj
+<< /Length 1644 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(The pipeline container writes to the shared `data` volume, and the dashboard container) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(reads from that same output. This means Docker Compose preserves the same architectural) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(separation found in local development.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 648 Tm
+(One subtle implementation detail is that the settings defaults point to `/app/...`) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(paths. Those defaults match the container layout. Local execution works best when) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 618 Tm
+(environment variables or compatible paths are provided.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 573 Tm
+(Design decisions and why they matter) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 536 Tm
+(### 1. Batch processing instead of streaming) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 491 Tm
+(The application runs as a batch job over a recent history window. It does not) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 476 Tm
+(continuously ingest events.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 431 Tm
+(Why this helps:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(- simpler control flow) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 356 Tm
+(- easy local execution) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(- easy reruns for a fixed time window) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 281 Tm
+(Tradeoff:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 236 Tm
+(- data is only as fresh as the most recent pipeline run) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 191 Tm
+(### 2. File-backed raw cache) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 146 Tm
+(Both geocoding responses and pollution responses are written to disk.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 101 Tm
+(Why this helps:) Tj
+ET
+endstream
+endobj
+14 0 obj
+<< /Length 1330 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(- reduces repeated API calls) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(- supports debugging) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(- preserves source responses for later inspection) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(Tradeoff:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(- cache invalidation is manual) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 558 Tm
+(- reruns with changed semantics may reuse older raw files) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 513 Tm
+(### 3. Clear extract/transform/load separation) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 468 Tm
+(The modules are organized by pipeline stage instead of by API endpoint alone.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 423 Tm
+(Why this helps:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 378 Tm
+(- the code mirrors the mental model used in data engineering) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 348 Tm
+(- each layer has a focused responsibility) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 318 Tm
+(- testing can target one stage at a time) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 273 Tm
+(Tradeoff:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 228 Tm
+(- some developers may need a short introduction to ETL vocabulary) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 183 Tm
+(### 4. Parquet-first analytics storage) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 138 Tm
+(The gold dataset is always written to a Parquet file.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 93 Tm
+(Why this helps:) Tj
+ET
+endstream
+endobj
+15 0 obj
+<< /Length 1262 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(- efficient for tabular analytics) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(- straightforward with pandas) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 663 Tm
+(- easy for the dashboard to consume) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 618 Tm
+(Tradeoff:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 573 Tm
+(- not optimized for transactional updates) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 543 Tm
+(- less discoverable than a database for some users) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 498 Tm
+(### 5. Optional PostgreSQL publishing) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 453 Tm
+(Database loading is controlled by configuration and is not required for the dashboard.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 408 Tm
+(Why this helps:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 363 Tm
+(- keeps the default path simple) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 333 Tm
+(- allows future downstream integrations) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 288 Tm
+(Tradeoff:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 243 Tm
+(- two output paths must stay conceptually aligned when PostgreSQL is enabled) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 198 Tm
+(### 6. Thin dashboard, heavier pipeline) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 153 Tm
+(The dashboard reads prepared data rather than reproducing transformation logic.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 108 Tm
+(Why this helps:) Tj
+ET
+endstream
+endobj
+16 0 obj
+<< /Length 1301 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(- one place for business rules) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(- simpler UI code) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(- fewer surprises between analysis pages) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(Tradeoff:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(- dashboard behavior depends on pipeline freshness and schema stability) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 543 Tm
+(Terminology guide) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 506 Tm
+(### Batch job) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 461 Tm
+(A program that runs, processes a bounded amount of data, and exits.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 416 Tm
+(In this repository, the pipeline command is a batch job.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(### Pipeline) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 326 Tm
+(A sequence of steps that moves data from source systems to a prepared output.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 281 Tm
+(Here, the steps are city input, geocoding, API extraction, transformation, and load.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 236 Tm
+(### Raw data) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 191 Tm
+(Data stored close to the original source response, usually with minimal cleanup.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 146 Tm
+(In this application, raw data is JSON saved under `data/raw`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 101 Tm
+(### Gold dataset) Tj
+ET
+endstream
+endobj
+17 0 obj
+<< /Length 1583 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 738 Tm
+(A cleaned and analysis-ready dataset intended for direct use by reports, dashboards, or) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(analysts.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 678 Tm
+(Here, the gold dataset is `air_pollution_gold.parquet`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 633 Tm
+(### Manifest) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 588 Tm
+(A metadata file that records what a pipeline run fetched or wrote.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 543 Tm
+(Here, manifests capture request windows, record counts, and paths to raw files.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 498 Tm
+(### Orchestration) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 453 Tm
+(The logic that decides what order the pipeline steps run in.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 408 Tm
+(Here, orchestration is handled by `run_pipeline.py`.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 363 Tm
+(### Idempotence) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 318 Tm
+(The idea that rerunning a job should not create inconsistent results.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 273 Tm
+(This pipeline is partly idempotent because it reuses cached files for the same output) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 258 Tm
+(path, but it is not a fully managed idempotent system with versioned datasets or) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 243 Tm
+(partition replacement.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 198 Tm
+(### Schema) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 153 Tm
+(The set of columns and types in a dataset.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 108 Tm
+(The schema of the gold dataset is defined by the transform code rather than by a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 93 Tm
+(separate schema registry.) Tj
+ET
+endstream
+endobj
+18 0 obj
+<< /Length 2221 >>
+stream
+BT
+/F2 14 Tf
+1 0 0 1 54 723 Tm
+(Implementation details that shape behavior) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 686 Tm
+(Several code-level details are important for understanding how the application behaves:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 641 Tm
+(- `run_id` is generated once per pipeline run and becomes part of raw output filenames.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 611 Tm
+(- `geo_id` combines city, country code, latitude, and longitude to create a stable) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 596 Tm
+(  location key.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 566 Tm
+(- transform logic infers city metadata from the raw file path instead of re-reading a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 551 Tm
+(  manifest.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 521 Tm
+(- duplicate handling keeps the last row for each `geo_id` and timestamp combination.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 491 Tm
+(- PostgreSQL writes replace the whole target table instead of performing incremental) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 476 Tm
+(  upserts.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 446 Tm
+(- the included test coverage currently focuses on transform parsing, not end-to-end) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 431 Tm
+(  pipeline execution.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(These choices are reasonable for a proof of concept because they keep the code) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(approachable. They also identify likely extension points if the application grows.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 326 Tm
+(Practical limitations) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 289 Tm
+(This repository is intentionally simple, so a few limitations are part of the current) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 274 Tm
+(architecture:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 229 Tm
+(- There is no workflow scheduler in the repo.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 199 Tm
+(- There is no formal schema validation on raw API payloads.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 169 Tm
+(- There is no incremental partitioning strategy for the gold dataset.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 139 Tm
+(- There is no history-aware cache invalidation policy.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 109 Tm
+(- There is no domain-specific explanation of whether the derived risk score is) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 94 Tm
+(  scientifically calibrated.) Tj
+ET
+endstream
+endobj
+19 0 obj
+<< /Length 1276 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 54 723 Tm
+(None of those limitations make the project unclear. They simply show that the) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 708 Tm
+(application is designed as a learning-oriented pipeline and dashboard rather than as a) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 693 Tm
+(full production platform.) Tj
+ET
+BT
+/F2 14 Tf
+1 0 0 1 54 648 Tm
+(Summary) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 611 Tm
+(City Air Tracker is a compact example of a layered data application.) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 566 Tm
+(Its architecture is centered on a simple idea:) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 521 Tm
+(- collect external air-quality data in a reproducible batch process) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 491 Tm
+(- preserve source responses in a raw layer) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 461 Tm
+(- transform them into one clean analytical dataset) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 431 Tm
+(- let the dashboard read that prepared dataset directly) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 386 Tm
+(For programmers who are new to pipelines, the most useful mental model is that this) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 371 Tm
+(application is not a dashboard that happens to fetch data. It is a pipeline-first system) Tj
+ET
+BT
+/F1 11 Tf
+1 0 0 1 54 356 Tm
+(where the dashboard is the final consumer of a curated dataset.) Tj
+ET
+endstream
+endobj
+20 0 obj
+<< /Type /Pages /Count 16 /Kids [ 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R 28 0 R 29 0 R 30 0 R 31 0 R 32 0 R 33 0 R 34 0 R 35 0 R 36 0 R ] >>
+endobj
+21 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 4 0 R >>
+endobj
+22 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 5 0 R >>
+endobj
+23 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 6 0 R >>
+endobj
+24 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 7 0 R >>
+endobj
+25 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 8 0 R >>
+endobj
+26 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 9 0 R >>
+endobj
+27 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 10 0 R >>
+endobj
+28 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 11 0 R >>
+endobj
+29 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 12 0 R >>
+endobj
+30 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 13 0 R >>
+endobj
+31 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 14 0 R >>
+endobj
+32 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 15 0 R >>
+endobj
+33 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 16 0 R >>
+endobj
+34 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 17 0 R >>
+endobj
+35 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 18 0 R >>
+endobj
+36 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 19 0 R >>
+endobj
+37 0 obj
+<< /Type /Catalog /Pages 20 0 R >>
+endobj
+xref
+0 38
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000154 00000 n 
+0000000222 00000 n 
+0000002266 00000 n 
+0000004304 00000 n 
+0000006217 00000 n 
+0000008103 00000 n 
+0000010145 00000 n 
+0000012159 00000 n 
+0000014042 00000 n 
+0000015546 00000 n 
+0000017271 00000 n 
+0000018968 00000 n 
+0000020351 00000 n 
+0000021666 00000 n 
+0000023020 00000 n 
+0000024656 00000 n 
+0000026930 00000 n 
+0000028259 00000 n 
+0000028426 00000 n 
+0000028574 00000 n 
+0000028722 00000 n 
+0000028870 00000 n 
+0000029018 00000 n 
+0000029166 00000 n 
+0000029314 00000 n 
+0000029463 00000 n 
+0000029612 00000 n 
+0000029761 00000 n 
+0000029910 00000 n 
+0000030059 00000 n 
+0000030208 00000 n 
+0000030357 00000 n 
+0000030506 00000 n 
+0000030655 00000 n 
+0000030804 00000 n 
+trailer
+<< /Size 38 /Root 37 0 R >>
+startxref
+30855
+%%EOF

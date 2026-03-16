@@ -1,0 +1,73 @@
+{
+  "info": {
+    "name": "OpenWeather Air Pollution API",
+    "_postman_id": "b1c2d3e4-f5a6-7890-abcd-123456789000",
+    "description": "Collection for querying the OpenWeather Air Pollution API (current, forecast, historical).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Current Air Pollution",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://api.openweathermap.org/data/2.5/air_pollution?lat={{lat}}&lon={{lon}}&appid={{API_KEY}}",
+          "protocol": "https",
+          "host": ["api", "openweathermap", "org"],
+          "path": ["data", "2.5", "air_pollution"],
+          "query": [
+            { "key": "lat", "value": "{{lat}}" },
+            { "key": "lon", "value": "{{lon}}" },
+            { "key": "appid", "value": "{{API_KEY}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Forecast Air Pollution",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://api.openweathermap.org/data/2.5/air_pollution/forecast?lat={{lat}}&lon={{lon}}&appid={{API_KEY}}",
+          "protocol": "https",
+          "host": ["api", "openweathermap", "org"],
+          "path": ["data", "2.5", "air_pollution", "forecast"],
+          "query": [
+            { "key": "lat", "value": "{{lat}}" },
+            { "key": "lon", "value": "{{lon}}" },
+            { "key": "appid", "value": "{{API_KEY}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Historical Air Pollution",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://api.openweathermap.org/data/2.5/air_pollution/history?lat={{lat}}&lon={{lon}}&start={{start}}&end={{end}}&appid={{API_KEY}}",
+          "protocol": "https",
+          "host": ["api", "openweathermap", "org"],
+          "path": ["data", "2.5", "air_pollution", "history"],
+          "query": [
+            { "key": "lat", "value": "{{lat}}" },
+            { "key": "lon", "value": "{{lon}}" },
+            { "key": "start", "value": "{{start}}" },
+            { "key": "end", "value": "{{end}}" },
+            { "key": "appid", "value": "{{API_KEY}}" }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "API_KEY", "value": "" },
+    { "key": "lat", "value": "50" },
+    { "key": "lon", "value": "50" },
+    { "key": "start", "value": "1606488670" },
+    { "key": "end", "value": "1606747870" }
+  ]
+}
