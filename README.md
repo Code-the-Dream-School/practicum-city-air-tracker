@@ -186,11 +186,16 @@ Deactivate when done:
 deactivate
 ```
 
-## Configure Cities
+## Configure cities
 
-Edit `configs/cities.csv`:
+The pipeline reads city targets from a CSV file controlled by the `CITIES_FILE`
+environment variable. The default is `CITIES_FILE=/app/configs/cities.csv`, which
+maps to `./configs/cities.csv` on your host machine (mounted read-only into both
+the `pipeline` and `dashboard` containers via `docker-compose.yml`).
 
-```csv
+The rows below are **sample cities included as editable examples only** — replace
+them with the cities you want to track:
+```
 city,country_code,state
 Toronto,CA,
 Paris,FR,
@@ -198,7 +203,53 @@ Lagos,NG,
 Sydney,AU,NSW
 ```
 
-For global cities, `country_code` is required to disambiguate.
+> For global cities, **`country_code` is required** to disambiguate
+> (e.g. `Springfield,US,IL`). The `state` column is optional for most countries.
+
+### Editing cities (Docker)
+
+Because `./configs` is mounted **read-only** into the containers, always edit the
+CSV on your **host machine** before running the pipeline — not inside the container:
+```bash
+# Edit on your host, then run
+nano configs/cities.csv
+docker compose up --build
+```
+
+### Using a custom city file (`CITIES_FILE`)
+
+You can point the pipeline to any CSV that follows the format above by changing
+`CITIES_FILE` in your `.env`. This is useful for maintaining separate city lists
+per environment.
+
+**Local dev `.env`:**
+```
+CITIES_FILE=configs/cities_local.csv
+```
+
+**Docker `.env` (path must be the container path under `/app/configs/`):**
+```
+CITIES_FILE=/app/configs/cities_production.csv
+```
+
+> **Note:** Any custom file must live inside `./configs/` on your host so it is
+> included in the read-only volume mount (`./configs:/app/configs:ro`).
+
+**Inline at the command line (local Python only):**
+```bash
+CITIES_FILE=configs/cities_staging.csv \
+  python services/pipeline/run_pipeline.py --source openweather --history-hours 72
+```
+
+### Troubleshooting city config issues
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `FileNotFoundError` on startup | `CITIES_FILE` path does not exist or is misspelled | Verify the file exists on your host under `./configs/`; remember the container sees it as `/app/configs/` |
+| Custom file not found in Docker | File is outside `./configs/` on the host | Move the file inside `./configs/` — only that directory is volume-mounted into the containers |
+| Pipeline runs but produces no output | CSV is empty or has only a header row | Add at least one data row beneath the `city,country_code,state` header |
+| Unexpected cities appear in output | `CITIES_FILE` points to the wrong file | Run `docker compose exec pipeline env \| grep CITIES_FILE` to confirm the active value |
+| Geocoding fails for a city | Missing or incorrect `country_code` | Add the correct ISO 3166-1 alpha-2 code (e.g. `US`, `FR`, `NG`) |
 
 ## Notes for Team Collaboration
 
