@@ -5,7 +5,7 @@ import streamlit as st
 import plotly.express as px
 
 st.title("City Trends (72h)")
-data_path = Path(os.getenv("DASHBOARD_DATA_PATH", "/app/data/gold/air_pollution_gold.parquet"))
+data_path = Path(os.getenv("DASHBOARD_DATA_PATH", "./data/gold/air_pollution_gold.parquet"))
 df = pd.read_parquet(data_path)
 
 geo = st.selectbox("City", sorted(df["geo_id"].unique()))
