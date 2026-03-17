@@ -47,3 +47,12 @@ def test_read_cities_raises_for_missing_required_columns(tmp_path: Path):
 
     with pytest.raises(ValueError, match=r"cities\.csv must include columns"):
         read_cities(path)
+
+
+def test_read_cities_raises_clear_error_for_missing_file(tmp_path: Path):
+    path = tmp_path / "does-not-exist.csv"
+
+    with pytest.raises(FileNotFoundError, match=r"CITIES_FILE path does not exist") as error:
+        read_cities(path)
+
+    assert str(path) in str(error.value)
