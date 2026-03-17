@@ -7,7 +7,7 @@ st.set_page_config(page_title="City Air Tracker", layout="wide")
 st.title("City Air Tracker — OpenWeather 72h History")
 st.caption("POC dashboard reading the gold dataset produced by the pipeline.")
 
-data_path = Path(os.getenv("DASHBOARD_DATA_PATH", "/app/data/gold/air_pollution_gold.parquet"))
+data_path = Path(os.getenv("DASHBOARD_DATA_PATH", "./data/gold/air_pollution_gold.parquet"))
 
 if not data_path.exists():
     st.warning(f"Gold dataset not found at {data_path}. Run the pipeline first.")
