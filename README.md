@@ -263,4 +263,6 @@ CITIES_FILE=configs/cities_staging.csv \
 - `docs/data_flow_diagram.md` - data flow diagram (PlantUML)
 - `docs/docker_and_compose_walkthrough.md` - line-by-line explanation of the Dockerfiles and `docker-compose.yml`
 - `docs/github_feature_branch_pr_guide.md` - feature branch and pull request workflow guide
+- `docs/pr_review_best_practices.md` - project-specific pull request review guidance
 - `docs/react_dashboard_architecture_guide.md` - architecture and library guide for the React dashboard implementation on `AIR-007.1`
+- `docs/what_is_a_data_pipeline.md` - plain-language explanation of what a data pipeline is and why teams use one
