@@ -261,4 +261,6 @@ CITIES_FILE=configs/cities_staging.csv \
 
 - `docs/architecture.md` - component + sequence diagrams (PlantUML)
 - `docs/data_flow_diagram.md` - data flow diagram (PlantUML)
-
+- `docs/docker_and_compose_walkthrough.md` - line-by-line explanation of the Dockerfiles and `docker-compose.yml`
+- `docs/github_feature_branch_pr_guide.md` - feature branch and pull request workflow guide
+- `docs/react_dashboard_architecture_guide.md` - architecture and library guide for the React dashboard implementation on `AIR-007.1`
