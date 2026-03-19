@@ -4,11 +4,20 @@ services:
       context: .
       dockerfile: services/pipeline/Dockerfile
     env_file: .env
+    environment:
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      AZURE_STORAGE_ACCOUNT_NAME: ${AZURE_STORAGE_ACCOUNT_NAME:-devstoreaccount1}
+      AZURE_STORAGE_ACCOUNT_KEY: ${AZURE_STORAGE_ACCOUNT_KEY:-Eby8vdM02xNOcqFeqCnf2FlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}
+      AZURE_STORAGE_BLOB_ENDPOINT: ${AZURE_STORAGE_BLOB_ENDPOINT:-http://azurite:10000/devstoreaccount1}
+      AZURE_STORAGE_CONNECTION_STRING: "${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqCnf2FlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;}"
+      AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-cityair}
+      AZURE_STORAGE_PREFIX: ${AZURE_STORAGE_PREFIX:-gold}
     volumes:
       - ./data:/app/data
       - ./configs:/app/configs:ro
     depends_on:
       - postgres
+      - azurite
     command: ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]
     restart: "no"
 
@@ -17,6 +26,15 @@ services:
       context: .
       dockerfile: services/dashboard/Dockerfile
     env_file: .env
+    environment:
+      DASHBOARD_DATA_PATH: ${DASHBOARD_DATA_PATH:-/app/data/gold/air_pollution_gold.parquet}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      AZURE_STORAGE_ACCOUNT_NAME: ${AZURE_STORAGE_ACCOUNT_NAME:-devstoreaccount1}
+      AZURE_STORAGE_ACCOUNT_KEY: ${AZURE_STORAGE_ACCOUNT_KEY:-Eby8vdM02xNOcqFeqCnf2FlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}
+      AZURE_STORAGE_BLOB_ENDPOINT: ${AZURE_STORAGE_BLOB_ENDPOINT:-http://azurite:10000/devstoreaccount1}
+      AZURE_STORAGE_CONNECTION_STRING: "${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqCnf2FlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;}"
+      AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-cityair}
+      AZURE_STORAGE_PREFIX: ${AZURE_STORAGE_PREFIX:-gold}
     volumes:
       - ./data:/app/data:ro
       - ./configs:/app/configs:ro
@@ -24,7 +42,6 @@ services:
       - "8501:8501"
     depends_on:
       - pipeline
-    command: ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
   postgres:
     image: postgres:16
@@ -44,5 +61,16 @@ services:
     depends_on:
       - postgres
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: ["azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0"]
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite_data:/data
+
 volumes:
   postgres_data:
+  azurite_data:
