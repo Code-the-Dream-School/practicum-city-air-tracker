@@ -27,7 +27,7 @@ rectangle "Transform" {
 database "Gold\n(data/gold/air_pollution_gold.parquet)" as GOLD
 database "Postgres (optional)" as PG
 rectangle "Serve" {
-  [Streamlit Dashboard] as DASH
+  [React Dashboard] as DASH
 }
 
 CITIES --> GEO

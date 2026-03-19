@@ -18,7 +18,7 @@ At a high level, the application:
 4. Stores the API responses as raw JSON files.
 5. Transforms those raw files into a cleaner analytical dataset in Parquet format.
 6. Optionally publishes the same data to PostgreSQL.
-7. Displays the final dataset in a Streamlit dashboard.
+7. Displays the final dataset in a React dashboard served by a lightweight Python API.
 
 This is an ETL-style workflow:
 
@@ -31,7 +31,7 @@ This is an ETL-style workflow:
 The repository contains two main runtime services and a shared set of files:
 
 - `services/pipeline`: the batch job that collects and prepares air-quality data.
-- `services/dashboard`: the Streamlit application that reads the prepared dataset.
+- `services/dashboard`: the React frontend and lightweight Python server that present the prepared dataset.
 - `configs`: input configuration such as the city list.
 - `data/raw`: cached API responses and manifests.
 - `data/gold`: the final analytical dataset used by the dashboard.
@@ -168,24 +168,22 @@ For a small local pipeline, Parquet is a good fit because it is compact, columna
 
 ## Dashboard architecture
 
-The dashboard code is in `services/dashboard/app`.
+The dashboard code is in `services/dashboard`.
 
-The dashboard has one home page and two analysis pages:
+The current dashboard is split into two parts:
 
-- `Home.py`
-- `pages/1_City_Trends.py`
-- `pages/2_Compare_Cities.py`
+- a React frontend under `services/dashboard/frontend`
+- a lightweight Python HTTP server in `services/dashboard/server.py`
 
-All pages read the gold Parquet dataset directly. The dashboard does not perform additional extraction or transformation beyond lightweight filtering and plotting.
+The Python server reads the gold Parquet dataset, exposes dashboard data through `/api/dashboard`, and serves the built frontend assets. The React app renders the overview, city trends, and comparison views from that API payload.
 
 ### Home page
 
-The home page:
+The overview page:
 
-- checks whether the gold dataset exists
-- loads the Parquet file into pandas
-- displays simple summary metrics
-- shows a preview table
+- shows a high-level summary of monitored cities
+- highlights high-risk and high-PM cities
+- visualizes latest cross-city ranking data
 
 ### City Trends page
 
@@ -193,7 +191,7 @@ The trends page:
 
 - lets the user choose one `geo_id`
 - lets the user choose one metric
-- plots that metric over time with Plotly
+- plots that metric over time in the React dashboard
 - shows recent rows for that city
 
 ### Compare Cities page
@@ -205,7 +203,7 @@ The comparison page:
 - plots the latest value per city
 - displays the same values in a table
 
-This dashboard is intentionally thin. Most data systems become easier to maintain when expensive or reusable logic stays in the pipeline, while the dashboard acts mainly as a reader of prepared data.
+This dashboard is intentionally thin on business logic. Most data systems become easier to maintain when expensive or reusable logic stays in the pipeline, while the dashboard acts mainly as a reader of prepared data through a simple API layer.
 
 ## Data storage model
 

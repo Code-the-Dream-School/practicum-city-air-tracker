@@ -5,7 +5,7 @@ This repo is a Code the Dream-friendly scaffold for a batch ETL data pipeline th
 2. Pulls OpenWeather Air Pollution (Historical) data for the last 72 hours
 3. Transforms raw JSON into a tidy gold dataset
 4. Loads to Parquet (and optionally Postgres)
-5. Serves a Streamlit dashboard that reads the gold dataset
+5. Serves a React dashboard that reads the gold dataset through a lightweight Python API
 
 ## Prerequisites
 
@@ -85,11 +85,16 @@ cp .env.example .env
 # Edit .env and set OPENWEATHER_API_KEY
 ```
 
-Run pipeline and dashboard:
+Run the pipeline locally:
 
 ```bash
 python services/pipeline/run_pipeline.py --source openweather --history-hours 72
-streamlit run services/dashboard/app/Home.py
+```
+
+For the dashboard, use Docker Compose so the React frontend and dashboard API run together:
+
+```bash
+docker compose up --build dashboard
 ```
 
 ## Local Setup: Windows (no WSL)
@@ -112,11 +117,16 @@ If PowerShell blocks activation scripts, run once as admin:
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-Run pipeline and dashboard:
+Run the pipeline locally:
 
 ```powershell
 python services/pipeline/run_pipeline.py --source openweather --history-hours 72
-streamlit run services/dashboard/app/Home.py
+```
+
+For the dashboard, use Docker Compose:
+
+```powershell
+docker compose up --build dashboard
 ```
 
 ## Local Setup: macOS
@@ -136,11 +146,16 @@ cp .env.example .env
 # Edit .env and set OPENWEATHER_API_KEY
 ```
 
-Run pipeline and dashboard:
+Run the pipeline locally:
 
 ```bash
 python services/pipeline/run_pipeline.py --source openweather --history-hours 72
-streamlit run services/dashboard/app/Home.py
+```
+
+For the dashboard, use Docker Compose:
+
+```bash
+docker compose up --build dashboard
 ```
 
 ## Docker Setup (Optional)
@@ -166,7 +181,53 @@ Stop services:
 docker compose down
 ```
 
-Docker note: you do not need your host `.venv` when running with Docker Compose. Each container installs Python dependencies inside the image (see `services/pipeline/Dockerfile` and `services/dashboard/Dockerfile`).
+Docker note: you do not need your host `.venv` when running with Docker Compose. The pipeline container installs Python dependencies, and the dashboard container builds the React frontend and serves it through a lightweight Python API (see `services/pipeline/Dockerfile` and `services/dashboard/Dockerfile`).
+
+## React Dashboard Rebuild And Test
+
+Use these commands when you want to rebuild or verify only the React dashboard service.
+
+Rebuild the dashboard image:
+
+```bash
+DOCKER_BUILDKIT=0 docker compose build dashboard
+```
+
+Start or refresh the dashboard container:
+
+```bash
+docker compose up -d dashboard
+```
+
+Verify the dashboard health endpoint:
+
+```bash
+curl -fsS http://localhost:8501/api/health
+```
+
+Expected:
+
+```json
+{"status": "ok"}
+```
+
+Verify the dashboard data endpoint:
+
+```bash
+curl -fsS http://localhost:8501/api/dashboard
+```
+
+Expected:
+- JSON with `rows`, `latestByCity`, and `summary`
+
+Verify the React app shell is being served:
+
+```bash
+curl -fsS http://localhost:8501/ | head -n 5
+```
+
+Expected:
+- HTML starting with `<!doctype html>`
 
 ## Docker Compose Azure Local Dev
 
@@ -241,7 +302,7 @@ Expected:
 - `http://localhost:8501`
 
 Expected:
-- the dashboard loads and shows metrics and tables instead of a "Gold dataset not found" warning
+- the React dashboard loads and shows metrics, charts, and tables for the latest dataset
 
 5. Optional endpoint checks:
 
@@ -272,7 +333,12 @@ Then run:
 
 ```bash
 python services/pipeline/run_pipeline.py --source openweather --history-hours 72
-streamlit run services/dashboard/app/Home.py
+```
+
+To launch the dashboard UI:
+
+```bash
+docker compose up --build dashboard
 ```
 
 Deactivate when done:
