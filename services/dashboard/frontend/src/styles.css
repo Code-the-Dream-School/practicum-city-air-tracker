@@ -29,6 +29,13 @@ input {
   font: inherit;
 }
 
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(64, 132, 255, 0.35);
+  outline-offset: 3px;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -115,6 +122,10 @@ input {
 .nav__item--active {
   background: linear-gradient(135deg, #6aa7ff, #79d4ff);
   color: #ffffff;
+}
+
+.nav__item:hover {
+  transform: translateY(-1px);
 }
 
 .sidebar__card,
@@ -521,6 +532,21 @@ input {
   .split-layout,
   .widget-grid--three {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .nav__item:hover {
+    transform: none;
   }
 }
 
