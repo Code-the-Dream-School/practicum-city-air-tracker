@@ -19,6 +19,7 @@
 | nh3 | float | Ammonia (μg/m3) |
 | pm2_5 | float | PM2.5 (μg/m3) |
 | pm10 | float | PM10 (μg/m3) |
+| pm2_5_24h_avg | float | Rolling 24-sample average of PM2.5 by `geo_id` |
 | aqi_category | string | Derived category label |
 | risk_score | float | Derived score (rule-based in POC) |
 

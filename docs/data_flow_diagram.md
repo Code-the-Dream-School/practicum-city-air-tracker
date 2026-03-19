@@ -38,8 +38,8 @@ EX --> AIRAPI
 EX --> RAW
 
 RAW --> TR
-TR --> GOLD
-TR --> PG
+TR --> GOLD : via load/storage.py
+TR --> PG : via load/storage.py (optional)
 
 GOLD --> DASH
 @enduml
