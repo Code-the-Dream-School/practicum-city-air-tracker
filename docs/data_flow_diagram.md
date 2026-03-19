@@ -27,7 +27,7 @@ rectangle "Transform" {
 database "Gold\n(data/gold/air_pollution_gold.parquet)" as GOLD
 database "Postgres (optional)" as PG
 rectangle "Serve" {
-  [Streamlit Dashboard] as DASH
+  [React Dashboard] as DASH
 }
 
 CITIES --> GEO
@@ -38,8 +38,8 @@ EX --> AIRAPI
 EX --> RAW
 
 RAW --> TR
-TR --> GOLD
-TR --> PG
+TR --> GOLD : via load/storage.py
+TR --> PG : via load/storage.py (optional)
 
 GOLD --> DASH
 @enduml

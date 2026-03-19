@@ -15,7 +15,7 @@ package "City Air Tracker (Monorepo)" {
   database "Raw Cache\n(data/raw/openweather/...)" as raw
   database "Gold Dataset\n(data/gold/air_pollution_gold.parquet)" as gold
   database "Postgres (optional)" as pg
-  component "Dashboard\n(Streamlit)" as dash
+  component "Dashboard\n(React + Python API)" as dash
   file "cities.csv" as cities
 }
 
@@ -25,7 +25,8 @@ geo --> raw : cache coords
 cli --> ex
 ex --> raw : write raw JSON + manifest
 cli --> tr
-tr --> gold : write parquet
+tr --> ld : build tidy dataframe
+ld --> gold : write parquet
 ld --> pg : optional
 dash --> gold : read
 
@@ -56,8 +57,8 @@ loop per city
   EX -> RAW: write response json + manifest
 end
 CLI -> TR: parse raw json -> tidy DF
-TR -> GOLD: write parquet
-CLI -> LD: optionally publish to DB
+CLI -> LD: publish outputs
+LD -> GOLD: write parquet
 LD -> PG: write table (if enabled)
 @enduml
 ```

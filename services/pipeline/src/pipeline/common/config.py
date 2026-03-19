@@ -12,6 +12,22 @@ class Settings(BaseSettings):
     data_dir: str = "/app/data"
     raw_dir: str = "/app/data/raw"
     gold_dir: str = "/app/data/gold"
+    storage_backend: str = "local"
+
+    # Optional Azure-compatible storage settings used by local Docker Compose development
+    azure_storage_account_name: str = "devstoreaccount1"
+    azure_storage_account_key: str = (
+        "Eby8vdM02xNOcqFeqCnf2FlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+    )
+    azure_storage_blob_endpoint: str = "http://azurite:10000/devstoreaccount1"
+    azure_storage_connection_string: str = (
+        "DefaultEndpointsProtocol=http;"
+        "AccountName=devstoreaccount1;"
+        "AccountKey=Eby8vdM02xNOcqFeqCnf2FlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+        "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+    )
+    azure_storage_container: str = "cityair"
+    azure_storage_prefix: str = "gold"
 
     # Optional Postgres load
     use_postgres: bool = False
