@@ -8,13 +8,13 @@ The repository now includes these automated pull request checks for PRs targetin
 
 - `AIR ticket check`
   - Verifies the pull request title contains an `AIR-<number>` ticket.
-  - Defined in [`.github/workflows/air-ticket-check.yml`](.github/workflows/air-ticket-check.yml).
+  - Defined in [`../../.github/workflows/air-ticket-check.yml`](../../.github/workflows/air-ticket-check.yml).
 - `Python smoke check`
   - Installs dependencies and compiles the Python code under `services/` to catch syntax and import-time issues early.
-  - Defined in [`.github/workflows/python-quality-gates.yml`](.github/workflows/python-quality-gates.yml).
+  - Defined in [`../../.github/workflows/python-quality-gates.yml`](../../.github/workflows/python-quality-gates.yml).
 - `Pipeline tests`
   - Runs the pipeline test suite in GitHub Actions using `pytest`.
-  - Defined in [`.github/workflows/python-quality-gates.yml`](.github/workflows/python-quality-gates.yml).
+  - Defined in [`../../.github/workflows/python-quality-gates.yml`](../../.github/workflows/python-quality-gates.yml).
 
 These checks reduce the chance of merging broken Python changes when the only human review is by the author.
 

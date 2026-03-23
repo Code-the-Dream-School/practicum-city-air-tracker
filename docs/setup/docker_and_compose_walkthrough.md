@@ -1,0 +1,354 @@
+# Docker And Compose Walkthrough
+
+This guide explains the Docker-related files in this repository line by line.
+
+It is written for beginners who want to understand what each instruction is doing instead of only copying commands.
+
+The files covered here are:
+
+- `services/pipeline/Dockerfile`
+- `services/dashboard/Dockerfile`
+- `docker-compose.yml`
+
+## `services/pipeline/Dockerfile`
+
+Current file:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY services/pipeline /app
+COPY configs /app/configs
+
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]
+```
+
+Line-by-line explanation:
+
+- `FROM python:3.11-slim`
+  Starts the image from the official Python 3.11 slim base image.
+  "Slim" means it is smaller than the full Python image, which helps reduce image size.
+
+- `WORKDIR /app`
+  Sets `/app` as the working directory inside the container.
+  Commands that follow run relative to this folder unless they use absolute paths.
+
+- `RUN apt-get update && apt-get install -y --no-install-recommends \`
+  Updates the Debian package list and installs system packages needed during image build.
+
+- `    build-essential \`
+  Installs common C/C++ build tools.
+  This is often needed because some Python packages compile native extensions during `pip install`.
+
+- ` && rm -rf /var/lib/apt/lists/*`
+  Deletes cached package-list files after installation.
+  This keeps the image smaller.
+
+- `COPY requirements.txt /app/requirements.txt`
+  Copies the Python dependency file from the repo into the image.
+
+- `RUN pip install --no-cache-dir -r /app/requirements.txt`
+  Installs the Python dependencies listed in `requirements.txt`.
+  `--no-cache-dir` tells pip not to keep downloaded package caches, which again helps keep the image smaller.
+
+- `COPY services/pipeline /app`
+  Copies the pipeline application code into the container.
+
+- `COPY configs /app/configs`
+  Copies the configuration files, including the cities CSV, into the container.
+
+- `ENV PYTHONUNBUFFERED=1`
+  Makes Python send logs to stdout immediately instead of buffering them.
+  That is helpful in containers because logs appear in `docker compose logs` right away.
+
+- `CMD ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]`
+  Sets the default command when the pipeline container starts.
+  In this project, it runs the ETL pipeline using the OpenWeather source and a 72-hour history window.
+
+## `services/dashboard/Dockerfile`
+
+Current file:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY services/dashboard /app
+EXPOSE 8501
+CMD ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
+```
+
+Line-by-line explanation:
+
+- `FROM python:3.11-slim`
+  Uses the official Python 3.11 slim image as the starting point for the dashboard container.
+
+- `WORKDIR /app`
+  Sets `/app` as the working directory inside the container.
+
+- `COPY requirements.txt /app/requirements.txt`
+  Copies the shared Python dependency list into the image.
+
+- `RUN pip install --no-cache-dir -r /app/requirements.txt`
+  Installs the Python dependencies needed by the dashboard.
+  The dashboard uses Streamlit and related Python libraries from the same requirements file.
+
+- `COPY services/dashboard /app`
+  Copies the dashboard code into the image.
+
+- `EXPOSE 8501`
+  Documents that the container listens on port `8501`.
+  This does not publish the port by itself; Docker Compose does that later.
+
+- `CMD ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]`
+  Sets the default command for the dashboard container.
+  It launches the Streamlit app, tells it to use port `8501`, and binds to `0.0.0.0` so the app is reachable from outside the container.
+
+## `docker-compose.yml`
+
+Current file:
+
+```yaml
+services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: services/pipeline/Dockerfile
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs:ro
+    depends_on:
+      - postgres
+    command: ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]
+    restart: "no"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: services/dashboard/Dockerfile
+    env_file: .env
+    volumes:
+      - ./data:/app/data:ro
+      - ./configs:/app/configs:ro
+    ports:
+      - "8501:8501"
+    depends_on:
+      - pipeline
+    command: ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: cityair
+      POSTGRES_USER: cityair
+      POSTGRES_PASSWORD: cityair
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:4
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+```
+
+### Top-level structure
+
+- `services:`
+  Starts the list of containers that Docker Compose should manage together.
+
+In this project, there are four services:
+
+- `pipeline`
+- `dashboard`
+- `postgres`
+- `adminer`
+
+### `pipeline` service
+
+- `pipeline:`
+  Names the service.
+
+- `build:`
+  Tells Docker Compose to build an image instead of pulling a finished image from a registry.
+
+- `context: .`
+  Uses the project root as the Docker build context.
+  That means files from the repo root are available to copy into the image.
+
+- `dockerfile: services/pipeline/Dockerfile`
+  Tells Compose exactly which Dockerfile to use for the pipeline service.
+
+- `env_file: .env`
+  Loads environment variables from the project’s `.env` file into the container.
+
+- `volumes:`
+  Defines host-to-container filesystem mounts.
+
+- `- ./data:/app/data`
+  Mounts the host `data` folder into the container as `/app/data`.
+  This lets pipeline outputs remain on the host machine after the container stops.
+
+- `- ./configs:/app/configs:ro`
+  Mounts the host `configs` folder into the container as `/app/configs`.
+  `:ro` means read-only, so the container can read config files but not modify them.
+
+- `depends_on:`
+  Lists services that should start before this one.
+
+- `- postgres`
+  Indicates the pipeline depends on Postgres being started first.
+
+- `command: ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]`
+  Overrides or restates the default command and runs the pipeline.
+
+- `restart: "no"`
+  Tells Docker not to restart this service automatically.
+  That makes sense because the pipeline is a batch job, not a long-running web service.
+
+### `dashboard` service
+
+- `dashboard:`
+  Names the dashboard service.
+
+- `build:`
+  Builds the dashboard image from source.
+
+- `context: .`
+  Uses the repo root as the build context.
+
+- `dockerfile: services/dashboard/Dockerfile`
+  Uses the dashboard Dockerfile.
+
+- `env_file: .env`
+  Loads environment variables from `.env`.
+
+- `volumes:`
+  Defines host mounts for the dashboard.
+
+- `- ./data:/app/data:ro`
+  Mounts the data folder read-only so the dashboard can read the generated parquet file.
+
+- `- ./configs:/app/configs:ro`
+  Mounts the config folder read-only.
+
+- `ports:`
+  Publishes container ports to the host machine.
+
+- `- "8501:8501"`
+  Maps host port `8501` to container port `8501`.
+  That is why the dashboard is available at `http://localhost:8501`.
+
+- `depends_on:`
+  Lists services that should start first.
+
+- `- pipeline`
+  Starts the dashboard after the pipeline service is started.
+  Note that this does not guarantee the pipeline has finished producing data; it only controls startup order.
+
+- `command: ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]`
+  Starts the Streamlit dashboard inside the container.
+
+### `postgres` service
+
+- `postgres:`
+  Names the Postgres database service.
+
+- `image: postgres:16`
+  Pulls the official Postgres version 16 image from Docker Hub.
+
+- `environment:`
+  Sets environment variables for the Postgres container.
+
+- `POSTGRES_DB: cityair`
+  Creates a default database named `cityair`.
+
+- `POSTGRES_USER: cityair`
+  Sets the database username.
+
+- `POSTGRES_PASSWORD: cityair`
+  Sets the database password.
+
+- `ports:`
+  Publishes database access to the host.
+
+- `- "5432:5432"`
+  Maps the standard Postgres port from the container to the host.
+
+- `volumes:`
+  Defines persistent storage for the database.
+
+- `- postgres_data:/var/lib/postgresql/data`
+  Stores Postgres data in a named Docker volume so the database survives container restarts.
+
+### `adminer` service
+
+- `adminer:`
+  Names the Adminer service.
+
+- `image: adminer:4`
+  Pulls the Adminer image.
+  Adminer is a lightweight web UI for inspecting databases.
+
+- `ports:`
+  Publishes Adminer on the host.
+
+- `- "8080:8080"`
+  Makes Adminer available at `http://localhost:8080`.
+
+- `depends_on:`
+  Starts Adminer after Postgres is started.
+
+- `- postgres`
+  Indicates the dependency.
+
+### Named volumes
+
+- `volumes:`
+  Starts the named-volume section.
+
+- `postgres_data:`
+  Declares a named Docker volume used by the Postgres service.
+
+## Practical summary
+
+When you run:
+
+```bash
+docker compose up --build
+```
+
+Docker Compose does the following:
+
+1. builds the pipeline and dashboard images
+2. starts Postgres
+3. starts the pipeline job
+4. starts the Streamlit dashboard
+5. starts Adminer
+
+The important idea is that:
+
+- the pipeline writes data into `./data`
+- the dashboard reads that same data from `./data`
+- Postgres is optional for serving the same dataset in database form
+- Adminer helps you inspect Postgres visually
