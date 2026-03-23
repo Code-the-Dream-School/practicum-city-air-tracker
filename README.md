@@ -111,6 +111,5 @@ Browse `docs/README.md` for the full categorized index.
 - `docs/collaboration/what_is_a_data_pipeline.md`
 - `docs/architecture/architecture.md`
 - `docs/architecture/data_flow_diagram.md`
-- `docs/architecture/react_dashboard_architecture_guide.md`
 - `docs/reference/data_dictionary.md`
 - `docs/reference/openweather_environmental_api_fields_reference.md`
