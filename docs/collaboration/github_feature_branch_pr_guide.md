@@ -30,7 +30,7 @@ Examples from this project:
 - `feature/AIR-006-llm-7day-air-quality-forecasting`
 - `feature/AIR-009-store-gold-parquet-dataset-in-azure-cloud-storage`
 - `feature/AIR-009.4-docker-compose-azure`
-- `feature/AIR-007.1-migrate-dashboard-to-react`
+- `feature/AIR-002.2-pr-review-and-data-pipeline-docs`
 
 ## Branch Naming Rules
 

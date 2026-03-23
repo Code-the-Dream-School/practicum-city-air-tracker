@@ -4,7 +4,7 @@
 
 This guide helps reviewers give consistent, useful pull request feedback for the City Air Tracker repository.
 
-It is project-specific on purpose. The best PR reviews do not only check style. They confirm that a change is safe for this codebase's pipeline, dashboard, local development workflow, and documentation.
+It is project-specific on purpose. The best PR reviews do not only check style. They confirm that a change is safe for this codebase's pipeline, Streamlit dashboard, local development workflow, and documentation.
 
 Use this guide together with the existing branch and pull request workflow materials in `docs/`.
 
@@ -73,6 +73,7 @@ Focus on:
 Relevant areas often include:
 
 - `services/pipeline/run_pipeline.py`
+- `services/pipeline/src/pipeline/common`
 - `services/pipeline/src/pipeline/extract`
 - `services/pipeline/src/pipeline/transform`
 - `services/pipeline/src/pipeline/load`
@@ -80,21 +81,23 @@ Relevant areas often include:
 
 #### Dashboard changes
 
+This branch uses a Streamlit dashboard that reads the gold Parquet dataset directly.
+
 Focus on:
 
-- whether the API contract consumed by the frontend still matches server output
-- loading, empty, and error states
+- whether the dashboard still reads the expected gold dataset path
+- loading, empty, and warning states
 - whether metrics and labels still reflect the underlying dataset correctly
-- responsiveness and readability for tables, charts, and cards
-- whether shared formatting helpers stay consistent across pages
+- whether tables and charts still work with current gold-schema fields
+- whether dashboard pages remain usable after pipeline schema or config changes
 
 Relevant areas often include:
 
-- `services/dashboard/server.py`
-- `services/dashboard/frontend/src/components`
-- `services/dashboard/frontend/src/pages`
-- `services/dashboard/frontend/src/shared`
-- `services/dashboard/frontend/src/hooks`
+- `services/dashboard/app/Home.py`
+- `services/dashboard/app/pages/1_City_Trends.py`
+- `services/dashboard/app/pages/2_Compare_Cities.py`
+- `services/dashboard/Dockerfile`
+- `docker-compose.yml`
 
 #### Infrastructure and developer workflow changes
 
@@ -134,6 +137,16 @@ Use the sections below as a checklist, not as a requirement that every PR must t
 - Are timestamp and timezone assumptions explicit?
 - Could the change create duplicate rows, stale cache reads, or broken manifests?
 
+For this branch, pay attention to fields used directly by the dashboard, such as:
+
+- `geo_id`
+- `ts`
+- `aqi`
+- `aqi_category`
+- `pm2_5`
+- `pm10`
+- `risk_score`
+
 ### Testing
 
 - Are there automated tests for the most important behavior?
@@ -145,9 +158,11 @@ For this project, examples of useful validation include:
 
 - `pytest services/pipeline/tests -q`
 - targeted test files for changed pipeline behavior
-- `docker compose up --build dashboard`
-- checking `/api/health` and `/api/dashboard`
-- verifying the dashboard renders expected data after a pipeline run
+- `python services/pipeline/run_pipeline.py --source openweather --history-hours 72`
+- `streamlit run services/dashboard/app/Home.py`
+- `docker compose up --build`
+- verifying `data/gold/air_pollution_gold.parquet` is created
+- verifying the dashboard renders expected metrics and tables after a pipeline run
 
 ### Maintainability
 
@@ -173,7 +188,7 @@ Try to make each comment easy to act on. Good review comments usually include:
 
 Examples:
 
-- "This looks like it changes the dashboard payload shape, but I do not see the frontend consumer updated. Could this break `ComparePage`?"
+- "This changes the gold dataset fields used by the Streamlit pages, but I do not see the dashboard updated. Could this break `1_City_Trends.py` or `2_Compare_Cities.py`?"
 - "The retry path handles 429 responses, but I do not see a test for exhausted retries. Can we add one?"
 - "This adds a new environment variable. Please update the README setup section so local contributors do not miss it."
 
@@ -202,10 +217,10 @@ This reduces confusion and helps authors prioritize.
 
 ### Common risks in dashboard PRs
 
-- frontend assumptions that no longer match API responses
+- Streamlit pages that assume fields that no longer exist in the gold dataset
 - pages that work with full data but fail with empty or partial data
-- formatting differences between widgets for the same metric
-- components that hard-code fields that may change in the dataset
+- misleading metric labels or sort orders
+- hard-coded paths that do not match `DASHBOARD_DATA_PATH`
 
 ### Common risks in docs and setup PRs
 

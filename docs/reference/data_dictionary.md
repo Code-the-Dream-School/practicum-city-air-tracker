@@ -19,7 +19,8 @@
 | nh3 | float | Ammonia (μg/m3) |
 | pm2_5 | float | PM2.5 (μg/m3) |
 | pm10 | float | PM10 (μg/m3) |
+| pm2_5_24h_avg | float | Rolling 24-observation average of `pm2_5` per `geo_id` |
 | aqi_category | string | Derived category label |
 | risk_score | float | Derived score (rule-based in POC) |
 
-> Replace/extend units and definitions based on the exact OpenWeather response fields you use.
+This schema reflects the current transform output used by the Streamlit dashboard on this branch.

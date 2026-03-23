@@ -134,7 +134,7 @@ Separating the pipeline from the dashboard gives a few benefits:
 - raw responses can be cached and inspected later
 - data cleanup rules are centralized
 - the dashboard can read a prepared dataset instead of rebuilding it live
-- contributors can test pipeline logic separately from frontend behavior
+- contributors can test pipeline logic separately from dashboard behavior
 
 ## A simple mental model
 

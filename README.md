@@ -10,7 +10,7 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 
 ## Main run guide
 
-Use `docs/run_and_debug_guide.md` for:
+Use `docs/setup/run_and_debug_guide.md` for:
 
 - local Python installation
 - Python library installation
@@ -101,8 +101,16 @@ For Docker Compose, custom city files must live inside `./configs/` on the host 
 
 ## Additional docs
 
-- `docs/architecture.md`
-- `docs/data_flow_diagram.md`
-- `docs/data_dictionary.md`
-- `docs/openweather_environmental_api_fields_reference.md`
-- `docs/github_quality_gates_setup.md`
+Browse `docs/README.md` for the full categorized index.
+
+- `docs/setup/run_and_debug_guide.md`
+- `docs/setup/docker_and_compose_walkthrough.md`
+- `docs/setup/github_quality_gates_setup.md`
+- `docs/collaboration/github_feature_branch_pr_guide.md`
+- `docs/collaboration/pr_review_best_practices.md`
+- `docs/collaboration/what_is_a_data_pipeline.md`
+- `docs/architecture/architecture.md`
+- `docs/architecture/data_flow_diagram.md`
+- `docs/architecture/react_dashboard_architecture_guide.md`
+- `docs/reference/data_dictionary.md`
+- `docs/reference/openweather_environmental_api_fields_reference.md`
