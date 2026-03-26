@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     postgres_user: str = "cityair"
     postgres_password: str = "cityair"
 
+    # Archive storage
+    archive_storage: str = "local"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -7,8 +7,14 @@ from ..common.config import settings
 
 
 def publish_outputs(gold_df: pd.DataFrame, gold_dir: Path, table_name: str) -> Path:
-    gold_path = gold_dir / f"{table_name}.parquet"
-    gold_df.to_parquet(gold_path, index=False)
+
+    if settings.archive_storage == "local":
+        gold_path = gold_dir / f"{table_name}.parquet"
+        gold_df.to_parquet(gold_path, index=False)
+    elif settings.archive_storage == "azure":
+        raise NotImplementedError("Azure storage is not implemented yet.")
+    else:
+        raise ValueError(f"Unsupported archive storage: {settings.archive_storage}")
 
     if settings.use_postgres:
         engine = create_engine(
