@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Literal
 
 
 class Settings(BaseSettings):
@@ -13,8 +14,8 @@ class Settings(BaseSettings):
     raw_dir: str = "/app/data/raw"
     gold_dir: str = "/app/data/gold"
 
-    # Optional Postgres load
-    use_postgres: bool = False
+    # Gold storage backend
+    gold_storage_backend: Literal["parquet", "postgres", "both"] = "parquet"
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "cityair"

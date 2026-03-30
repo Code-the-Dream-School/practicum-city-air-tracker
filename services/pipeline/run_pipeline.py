@@ -58,9 +58,16 @@ def main() -> None:
     gold_df = build_gold_from_raw(raw_files=raw_files)
 
     # Load
-    gold_path = publish_outputs(gold_df=gold_df, gold_dir=gold_dir, table_name="air_pollution_gold")
+    publish_result = publish_outputs(gold_df=gold_df, gold_dir=gold_dir, table_name="air_pollution_gold")
 
-    log.info("Pipeline complete", extra={"gold_path": str(gold_path), "rows": len(gold_df)})
+    log.info(
+        "Pipeline complete",
+        extra={
+            "gold_parquet_path": str(publish_result.parquet_path) if publish_result.parquet_path else None,
+            "gold_postgres_table": publish_result.postgres_table,
+            "rows": len(gold_df),
+        },
+    )
 
 
 if __name__ == "__main__":
