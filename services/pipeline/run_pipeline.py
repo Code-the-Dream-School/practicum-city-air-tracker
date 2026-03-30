@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from src.pipeline.common.config import settings
 from src.pipeline.common.logging import get_logger
@@ -12,6 +13,16 @@ from src.pipeline.load.storage import publish_outputs
 
 
 log = get_logger(__name__)
+
+
+def _normalize_publish_result(publish_result: Any) -> tuple[Path | None, str | None]:
+    """Support both structured and Path-only publish return values."""
+    if isinstance(publish_result, Path):
+        return publish_result, None
+
+    parquet_path = getattr(publish_result, "parquet_path", None)
+    postgres_table = getattr(publish_result, "postgres_table", None)
+    return parquet_path, postgres_table
 
 
 def main() -> None:
@@ -59,12 +70,13 @@ def main() -> None:
 
     # Load
     publish_result = publish_outputs(gold_df=gold_df, gold_dir=gold_dir, table_name="air_pollution_gold")
+    parquet_path, postgres_table = _normalize_publish_result(publish_result)
 
     log.info(
         "Pipeline complete",
         extra={
-            "gold_parquet_path": str(publish_result.parquet_path) if publish_result.parquet_path else None,
-            "gold_postgres_table": publish_result.postgres_table,
+            "gold_parquet_path": str(parquet_path) if parquet_path else None,
+            "gold_postgres_table": postgres_table,
             "rows": len(gold_df),
         },
     )
