@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "city-air-tracker-pipeline"
+version = "0.1.0"
+description = "City Air Tracker pipeline package"
+requires-python = ">=3.11"
+
+[project.scripts]
+city-air-pipeline = "pipeline.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "services/pipeline/src"}
+
+[tool.setuptools.packages.find]
+where = ["services/pipeline/src"]

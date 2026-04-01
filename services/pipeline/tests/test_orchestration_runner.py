@@ -4,9 +4,9 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
-from src.pipeline.extract.cities import CitySpec
-from src.pipeline.orchestration import PipelineRunResult, run_pipeline_job
-import src.pipeline.orchestration as orchestration
+from pipeline.extract.cities import CitySpec
+from pipeline.orchestration import PipelineRunResult, run_pipeline_job
+import pipeline.orchestration as orchestration
 
 
 def test_run_pipeline_job_is_importable_and_returns_result(

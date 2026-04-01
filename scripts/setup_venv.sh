@@ -33,9 +33,10 @@ source "$VENV_DIR/bin/activate"
 
 python -m pip install --upgrade pip setuptools wheel
 python -m pip install -r requirements.txt
+python -m pip install --no-build-isolation -e .
 
 echo
 echo "Setup complete."
 echo "Activate with: source .venv/bin/activate"
-echo "Run pipeline: python services/pipeline/run_pipeline.py --source openweather --history-hours 72"
+echo "Run pipeline: python -m pipeline.cli --source openweather --history-hours 72"
 echo "Run dashboard: streamlit run services/dashboard/app/Home.py"

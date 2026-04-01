@@ -37,11 +37,12 @@ try {
 
     & $VenvPython -m pip install --upgrade pip setuptools wheel
     & $VenvPython -m pip install -r requirements.txt
+    & $VenvPython -m pip install --no-build-isolation -e .
 
     Write-Host ""
     Write-Host "Setup complete."
     Write-Host "Activate with: .venv\Scripts\Activate.ps1"
-    Write-Host "Run pipeline: python services/pipeline/run_pipeline.py --source openweather --history-hours 72"
+    Write-Host "Run pipeline: python -m pipeline.cli --source openweather --history-hours 72"
     Write-Host "Run dashboard: streamlit run services/dashboard/app/Home.py"
 }
 finally {

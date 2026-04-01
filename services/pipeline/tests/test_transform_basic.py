@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 import pandas as pd
 
-from src.pipeline.transform.openweather_air_pollution_transform import build_gold_from_raw
+from pipeline.transform.openweather_air_pollution_transform import build_gold_from_raw
 
 
 def test_build_gold_from_raw_parses_list(tmp_path: Path):
