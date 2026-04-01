@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.pipeline.extract.cities import CitySpec, read_cities
+from pipeline.extract.cities import CitySpec, read_cities
 
 
 def test_read_cities_skips_blank_required_values(tmp_path: Path):

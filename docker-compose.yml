@@ -9,7 +9,7 @@ services:
       - ./configs:/app/configs:ro
     depends_on:
       - postgres
-    command: ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]
+    command: ["python", "-m", "pipeline.cli", "--source", "openweather", "--history-hours", "72"]
     restart: "no"
 
   dashboard:

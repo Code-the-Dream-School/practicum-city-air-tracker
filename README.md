@@ -28,6 +28,7 @@ These scripts:
 - create `.venv` in the project root if missing
 - upgrade `pip`, `setuptools`, and `wheel`
 - install dependencies from `requirements.txt`
+- install the local pipeline package in editable mode for module-based execution
 
 ### WSL, Linux, or macOS
 
@@ -51,6 +52,14 @@ After script setup, activate the environment:
 
 - WSL, Linux, macOS: `source .venv/bin/activate`
 - Windows PowerShell: `.venv\Scripts\Activate.ps1`
+
+Run the pipeline locally with the package entrypoint:
+
+```bash
+python -m pipeline.cli --source openweather --history-hours 72
+```
+
+This is the preferred local run path because it matches the packaged production-style entrypoint used by the pipeline service.
 
 ## Configure cities
 
