@@ -4,6 +4,7 @@ requests>=2.32
 pydantic>=2.7
 pydantic-settings>=2.3
 python-dotenv>=1.0
+APScheduler>=3.10
 duckdb>=1.0
 sqlalchemy>=2.0
 psycopg[binary]>=3.2
