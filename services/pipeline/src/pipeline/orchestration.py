@@ -11,7 +11,7 @@ from .common.logging import get_logger
 from .extract.cities import read_cities
 from .extract.geocoding import geocode_city
 from .extract.openweather_air_pollution import fetch_air_pollution_history
-from .load.storage import publish_outputs
+from .load.storage import PublishResult, publish_outputs
 from .transform.openweather_air_pollution_transform import build_gold_from_raw
 
 
@@ -24,7 +24,8 @@ class PipelineRunResult:
     source: str
     history_hours: int
     raw_files: list[Path]
-    gold_path: Path
+    gold_path: Path | None
+    postgres_table: str | None
     rows: int
 
 
@@ -72,7 +73,9 @@ def run_transform_stage(raw_files: list[Path]) -> pd.DataFrame:
     return build_gold_from_raw(raw_files=raw_files)
 
 
-def run_load_stage(gold_df: pd.DataFrame, gold_dir: Path, table_name: str = "air_pollution_gold") -> Path:
+def run_load_stage(
+    gold_df: pd.DataFrame, gold_dir: Path, table_name: str = "air_pollution_gold"
+) -> PublishResult:
     return publish_outputs(gold_df=gold_df, gold_dir=gold_dir, table_name=table_name)
 
 
@@ -86,16 +89,24 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
 
     raw_files = run_extract_stage(raw_dir=raw_dir, start=start, end=end, run_id=run_id)
     gold_df = run_transform_stage(raw_files=raw_files)
-    gold_path = run_load_stage(gold_df=gold_df, gold_dir=gold_dir)
+    publish_result = run_load_stage(gold_df=gold_df, gold_dir=gold_dir)
 
     result = PipelineRunResult(
         run_id=run_id,
         source=source,
         history_hours=resolved_history_hours,
         raw_files=raw_files,
-        gold_path=gold_path,
+        gold_path=publish_result.gold_path,
+        postgres_table=publish_result.table_name,
         rows=len(gold_df),
     )
 
-    log.info("Pipeline complete", extra={"gold_path": str(result.gold_path), "rows": result.rows})
+    log.info(
+        "Pipeline complete",
+        extra={
+            "gold_path": str(result.gold_path) if result.gold_path is not None else None,
+            "postgres_table": result.postgres_table,
+            "rows": result.rows,
+        },
+    )
     return result

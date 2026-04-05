@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # Optional Postgres load
     use_postgres: bool = False
+    write_gold_parquet: bool = True
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "cityair"
