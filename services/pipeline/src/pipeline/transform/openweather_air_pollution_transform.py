@@ -10,7 +10,7 @@ from .risk_scoring import add_risk_score, add_aqi_category
 COMPONENT_KEYS = ["co", "no", "no2", "o3", "so2", "nh3", "pm2_5", "pm10"]
 
 
-def build_gold_from_raw(raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
+def build_gold_from_raw_records(raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
     rows: list[dict] = []
 
     for raw_record in raw_records:

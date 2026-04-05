@@ -4,7 +4,7 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 
 1. Geocodes global cities to lat/lon
 2. Pulls OpenWeather Air Pollution historical data
-3. Transforms raw JSON into a gold dataset
+3. Transforms PostgreSQL-backed raw response records into a gold dataset
 4. Writes Parquet output and can optionally publish to Postgres
 5. Serves a Streamlit dashboard over the gold dataset
 

@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
 from pipeline.extract.openweather_air_pollution import RawAirPollutionRecord
-from pipeline.transform.openweather_air_pollution_transform import build_gold_from_raw
+from pipeline.transform.openweather_air_pollution_transform import build_gold_from_raw_records
 
 
-def test_build_gold_from_raw_parses_list():
+def test_build_gold_from_raw_records_parses_list():
     payload = {
         "list": [
             {
@@ -31,7 +31,7 @@ def test_build_gold_from_raw_parses_list():
         fetched_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
     )
 
-    df = build_gold_from_raw([raw_record])
+    df = build_gold_from_raw_records([raw_record])
     assert len(df) == 1
     assert "risk_score" in df.columns
     assert df.loc[df.index[0], "aqi_category"] in {"Good","Fair","Moderate","Poor","Very Poor","Unknown"}

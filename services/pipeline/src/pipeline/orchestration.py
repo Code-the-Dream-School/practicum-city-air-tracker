@@ -13,7 +13,7 @@ from .extract.geocoding import geocode_city
 from .extract.openweather_air_pollution import RawAirPollutionRecord, fetch_air_pollution_history
 from .load.storage import PublishResult, publish_outputs
 from .run_tracking import PipelineRunStatusUpdate, create_pipeline_run, update_pipeline_run_status
-from .transform.openweather_air_pollution_transform import build_gold_from_raw
+from .transform.openweather_air_pollution_transform import build_gold_from_raw_records
 
 
 log = get_logger(__name__)
@@ -76,7 +76,7 @@ def run_extract_stage(
 
 
 def run_transform_stage(raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
-    return build_gold_from_raw(raw_records=raw_records)
+    return build_gold_from_raw_records(raw_records=raw_records)
 
 
 def run_load_stage(
