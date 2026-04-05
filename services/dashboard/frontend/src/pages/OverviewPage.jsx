@@ -64,7 +64,7 @@ export function OverviewPage({ latestByCity, summary }) {
           icon={Database}
           title="Rows Loaded"
           value={summary.rowCount}
-          detail="Parquet observations available to the dashboard"
+          detail="PostgreSQL observations available to the dashboard"
           tone="lavender"
         />
       </div>

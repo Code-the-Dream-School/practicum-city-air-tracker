@@ -36,7 +36,7 @@ function App() {
       <LoadingState
         icon={RefreshCw}
         title="Loading your happy air widgets..."
-        description="We’re gathering the latest student-friendly air stories from the parquet dataset."
+        description="We’re gathering the latest student-friendly air stories from PostgreSQL."
       />
     );
   }
@@ -49,8 +49,8 @@ function App() {
     return (
       <EmptyState
         icon={Database}
-        title="No dataset found yet"
-        description="Run the pipeline first so the dashboard has a gold parquet file to read."
+        title="No dashboard data found yet"
+        description="Run the pipeline first so PostgreSQL has recent air-quality rows to display."
       />
     );
   }

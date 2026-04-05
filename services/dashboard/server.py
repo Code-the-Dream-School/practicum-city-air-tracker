@@ -3,34 +3,79 @@ from __future__ import annotations
 import json
 import mimetypes
 import os
+import time
 from dataclasses import dataclass
+from decimal import Decimal
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import numpy as np
 import pandas as pd
+from sqlalchemy import create_engine, text
 
 
-DEFAULT_DATA_PATH = "/app/data/gold/air_pollution_gold.parquet"
 PORT = int(os.getenv("PORT", "8501"))
-DATA_PATH = Path(os.getenv("DASHBOARD_DATA_PATH", DEFAULT_DATA_PATH))
+CACHE_TTL_SECONDS = int(os.getenv("DASHBOARD_CACHE_TTL_SECONDS", "60"))
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+DASHBOARD_QUERY = """
+SELECT
+    ts,
+    city,
+    country_code,
+    lat,
+    lon,
+    geo_id,
+    aqi,
+    co,
+    no,
+    no2,
+    o3,
+    so2,
+    nh3,
+    pm2_5,
+    pm10,
+    pm2_5_24h_avg,
+    aqi_category,
+    risk_score
+FROM air_pollution_gold
+ORDER BY geo_id, ts
+"""
 
 
 @dataclass
 class DashboardCache:
-    mtime: float | None = None
+    last_refresh_monotonic: float | None = None
     payload: dict | None = None
 
 
 cache = DashboardCache()
 
 
+def _build_postgres_url() -> str:
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    database = os.getenv("POSTGRES_DB", "cityair")
+    user = quote_plus(os.getenv("POSTGRES_USER", "cityair"))
+    password = quote_plus(os.getenv("POSTGRES_PASSWORD", "cityair"))
+    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+
+
+def _build_postgres_engine():
+    return create_engine(_build_postgres_url(), pool_pre_ping=True)
+
+
 def _normalize_value(value):
     if pd.isna(value):
         return None
+
+    if isinstance(value, Decimal):
+        return round(float(value), 3)
 
     if isinstance(value, np.generic):
         return value.item()
@@ -48,15 +93,22 @@ def _row_to_dict(row: pd.Series) -> dict:
     return {column: _normalize_value(value) for column, value in row.items()}
 
 
-def build_dashboard_payload() -> dict:
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Dashboard dataset not found at {DATA_PATH}")
+def _load_dashboard_frame() -> pd.DataFrame:
+    engine = _build_postgres_engine()
+    with engine.connect() as connection:
+        return pd.read_sql_query(text(DASHBOARD_QUERY), connection)
 
-    mtime = DATA_PATH.stat().st_mtime
-    if cache.mtime == mtime and cache.payload is not None:
+
+def build_dashboard_payload() -> dict:
+    now = time.monotonic()
+    if (
+        cache.payload is not None
+        and cache.last_refresh_monotonic is not None
+        and now - cache.last_refresh_monotonic < CACHE_TTL_SECONDS
+    ):
         return cache.payload
 
-    df = pd.read_parquet(DATA_PATH)
+    df = _load_dashboard_frame()
     if df.empty:
         payload = {
             "rows": [],
@@ -72,8 +124,8 @@ def build_dashboard_payload() -> dict:
         }
     else:
         df = df.copy()
-        df["ts"] = pd.to_datetime(df["ts"], utc=True)
-        df = df.sort_values(["geo_id", "ts"])
+        df["ts"] = pd.to_datetime(df["ts"], utc=True, errors="coerce")
+        df = df.dropna(subset=["ts"]).sort_values(["geo_id", "ts"])
         latest_by_city = df.groupby("geo_id", as_index=False).tail(1).sort_values(["city", "country_code"])
 
         payload = {
@@ -85,13 +137,15 @@ def build_dashboard_payload() -> dict:
                 "latestTimestamp": _normalize_value(df["ts"].max()),
                 "averageAqi": float(latest_by_city["aqi"].mean()) if latest_by_city["aqi"].notna().any() else None,
                 "highestRiskCity": _row_to_dict(
-                    latest_by_city.sort_values("risk_score", ascending=False).iloc[0]
+                    latest_by_city.sort_values("risk_score", ascending=False, na_position="last").iloc[0]
                 ),
-                "worstPm25City": _row_to_dict(latest_by_city.sort_values("pm2_5", ascending=False).iloc[0]),
+                "worstPm25City": _row_to_dict(
+                    latest_by_city.sort_values("pm2_5", ascending=False, na_position="last").iloc[0]
+                ),
             },
         }
 
-    cache.mtime = mtime
+    cache.last_refresh_monotonic = now
     cache.payload = payload
     return payload
 
@@ -103,15 +157,12 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
-            self._send_json({"status": "ok"})
+            self._send_json({"status": "ok", "dataSource": "postgresql"})
             return
 
         if parsed.path == "/api/dashboard":
             try:
                 payload = build_dashboard_payload()
-            except FileNotFoundError as exc:
-                self._send_json({"error": str(exc)}, status=HTTPStatus.NOT_FOUND)
-                return
             except Exception as exc:  # pragma: no cover - defensive HTTP fallback
                 self._send_json({"error": f"Dashboard API failed: {exc}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
                 return

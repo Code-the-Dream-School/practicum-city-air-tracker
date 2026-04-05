@@ -29,12 +29,18 @@ services:
       dockerfile: services/dashboard/Dockerfile
     env_file: .env
     environment:
-      DASHBOARD_DATA_PATH: ${DASHBOARD_DATA_PATH:-/app/data/gold/air_pollution_gold.parquet}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-cityair}
+      POSTGRES_USER: ${POSTGRES_USER:-cityair}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cityair}
+      DASHBOARD_CACHE_TTL_SECONDS: ${DASHBOARD_CACHE_TTL_SECONDS:-60}
     volumes:
-      - ./data:/app/data:ro
       - ./configs:/app/configs:ro
     ports:
       - "8501:8501"
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:16
