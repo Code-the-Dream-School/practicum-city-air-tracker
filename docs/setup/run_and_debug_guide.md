@@ -186,7 +186,7 @@ http://localhost:8501
 
 These are the expected results:
 
-- `data/raw` contains raw OpenWeather responses and manifests
+- `data/raw` contains raw OpenWeather air-pollution responses and manifests
 - `data/gold/air_pollution_gold.parquet` exists
 - the Streamlit app starts without the "Gold dataset not found" warning
 - the dashboard shows row and city metrics
