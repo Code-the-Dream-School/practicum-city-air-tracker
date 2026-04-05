@@ -111,6 +111,8 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             pipeline_run_id=pipeline_run_id,
         )
         gold_df = run_transform_stage(raw_records=raw_records)
+        if not gold_df.empty:
+            gold_df["pipeline_run_id"] = pipeline_run_id
         publish_result = run_load_stage(gold_df=gold_df, gold_dir=gold_dir)
 
         update_pipeline_run_status(

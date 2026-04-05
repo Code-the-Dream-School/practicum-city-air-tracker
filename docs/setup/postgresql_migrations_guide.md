@@ -97,3 +97,22 @@ psql postgresql://cityair:cityair@localhost:5432/cityair -c "select count(*) fro
 - The baseline migration is the first schema version for the PostgreSQL-first MVP.
 - Normal pipeline runs now expect PostgreSQL to be the primary gold-data target.
 - Later schema changes should be added as new Alembic revision files rather than editing the baseline migration after it has been applied in shared environments.
+
+## DB-native tests
+
+The PostgreSQL-first pipeline also has DB-native regression and integration coverage.
+
+Run the focused DB-native tests with:
+
+```bash
+pytest services/pipeline/tests/test_db_native_pipeline_integration.py
+```
+
+Run the broader pipeline regression set with:
+
+```bash
+pytest services/pipeline/tests/test_postgres_config.py \
+  services/pipeline/tests/test_storage_publish.py \
+  services/pipeline/tests/test_orchestration_runner.py \
+  services/pipeline/tests/test_db_native_pipeline_integration.py
+```
