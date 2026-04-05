@@ -8,6 +8,8 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 4. Writes Parquet output and can optionally publish to Postgres
 5. Serves a Streamlit dashboard over the gold dataset
 
+The migration path now supports DB-first load behavior, where PostgreSQL can be the primary load target and Parquet export is an explicit setting.
+
 ## Main run guide
 
 Use `docs/setup/run_and_debug_guide.md` for:

@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from pipeline.extract.cities import CitySpec
+from pipeline.load.storage import PublishResult
 from pipeline.orchestration import PipelineRunResult, run_pipeline_job
 import pipeline.orchestration as orchestration
 
@@ -32,7 +33,11 @@ def test_run_pipeline_job_is_importable_and_returns_result(
 
     def fake_publish_outputs(**kwargs):
         captured["publish_kwargs"] = kwargs
-        return tmp_path / "gold" / "air_pollution_gold.parquet"
+        return PublishResult(
+            table_name="air_pollution_gold",
+            gold_path=tmp_path / "gold" / "air_pollution_gold.parquet",
+            rows=1,
+        )
 
     monkeypatch.setattr(orchestration, "read_cities", fake_read_cities)
     monkeypatch.setattr(orchestration, "geocode_city", lambda **_: SimpleNamespace(lat=43.6535, lon=-79.3839))
@@ -47,6 +52,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     assert result.history_hours == 72
     assert result.rows == 1
     assert result.gold_path == tmp_path / "gold" / "air_pollution_gold.parquet"
+    assert result.postgres_table == "air_pollution_gold"
     assert captured["cities_path"] == tmp_path / "cities.csv"
     assert captured["raw_files"] == [tmp_path / "raw" / "x.json"]
     assert isinstance(captured["publish_kwargs"]["gold_df"], pd.DataFrame)
