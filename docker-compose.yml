@@ -28,14 +28,13 @@ services:
       context: .
       dockerfile: services/dashboard/Dockerfile
     env_file: .env
+    environment:
+      DASHBOARD_DATA_PATH: ${DASHBOARD_DATA_PATH:-/app/data/gold/air_pollution_gold.parquet}
     volumes:
       - ./data:/app/data:ro
       - ./configs:/app/configs:ro
     ports:
       - "8501:8501"
-    depends_on:
-      - pipeline
-    command: ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
   postgres:
     image: postgres:16
