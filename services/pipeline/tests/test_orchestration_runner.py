@@ -53,7 +53,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
         captured["publish_kwargs"] = kwargs
         return PublishResult(
             table_name="air_pollution_gold",
-            gold_path=tmp_path / "gold" / "air_pollution_gold.parquet",
+            gold_path=None,
             rows=1,
         )
 
@@ -72,7 +72,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     assert result.source == "openweather"
     assert result.history_hours == 72
     assert result.rows == 1
-    assert result.gold_path == tmp_path / "gold" / "air_pollution_gold.parquet"
+    assert result.gold_path is None
     assert result.postgres_table == "air_pollution_gold"
     assert captured["cities_path"] is None
     assert len(captured["raw_records"]) == 1

@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     raw_dir: str = "/app/data/raw"
     gold_dir: str = "/app/data/gold"
 
-    # Optional Postgres load
-    use_postgres: bool = False
-    write_gold_parquet: bool = True
+    # PostgreSQL is the primary gold target; Parquet is optional.
+    use_postgres: bool = True
+    write_gold_parquet: bool = False
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "cityair"
