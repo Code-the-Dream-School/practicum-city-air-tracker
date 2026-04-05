@@ -102,6 +102,8 @@ python -m pip install -r requirements.txt
 
 If you want to run this project locally without Docker, use Python plus a virtual environment and set `.env` to local filesystem paths.
 
+For the most direct DB-first setup and validation path, use [local_postgresql_first_workflow.md](/home/eugen/code-the-dream-workspace/practicum-city-air-tracker/docs/setup/local_postgresql_first_workflow.md) alongside this guide.
+
 Important:
 
 - PostgreSQL is the primary gold-data target on this branch.
@@ -194,6 +196,8 @@ These are the expected results:
 - the Streamlit app starts without the "Gold dataset not found" warning
 - the dashboard shows row and city metrics
 
+If you only want to validate the pipeline and database behavior, you can stop after the PostgreSQL verification steps in [local_postgresql_first_workflow.md](/home/eugen/code-the-dream-workspace/practicum-city-air-tracker/docs/setup/local_postgresql_first_workflow.md) and skip the dashboard.
+
 ## 4. How to run and debug the application in VS Code
 
 VS Code debugging is for local Python execution, not for debugging inside the Docker containers.
@@ -223,6 +227,7 @@ For local VS Code debugging, use local filesystem paths instead. In a real `.env
 OPENWEATHER_API_KEY=YOUR_REAL_KEY
 HISTORY_HOURS=72
 MAX_CALLS_PER_MINUTE=50
+CITIES_SOURCE=postgres
 CITIES_FILE=configs/cities.csv
 DATA_DIR=./data
 RAW_DIR=./data/raw
@@ -262,11 +267,13 @@ Create `.vscode/launch.json` with content like this:
         "OPENWEATHER_API_KEY": "YOUR_REAL_KEY",
         "HISTORY_HOURS": "72",
         "MAX_CALLS_PER_MINUTE": "50",
+        "CITIES_SOURCE": "postgres",
         "CITIES_FILE": "${workspaceFolder}/configs/cities.csv",
         "DATA_DIR": "${workspaceFolder}/data",
         "RAW_DIR": "${workspaceFolder}/data/raw",
         "GOLD_DIR": "${workspaceFolder}/data/gold",
-        "USE_POSTGRES": "0",
+        "USE_POSTGRES": "1",
+        "WRITE_GOLD_PARQUET": "0",
         "POSTGRES_HOST": "localhost",
         "POSTGRES_PORT": "5432",
         "POSTGRES_DB": "cityair",
@@ -309,14 +316,14 @@ Create `.vscode/launch.json` with content like this:
    - `services/pipeline/src/pipeline/extract/openweather_air_pollution.py`
    - `services/pipeline/src/pipeline/transform/openweather_air_pollution_transform.py`
 6. Start debugging with `F5`.
-7. After the pipeline has created the Parquet output, run `Dashboard: Streamlit` if you also want to debug the UI process.
+7. If you also want to debug the dashboard, enable `WRITE_GOLD_PARQUET=1`, rerun the pipeline, and then run `Dashboard: Streamlit`.
 
 ### How to verify local debugging is working
 
 For the pipeline:
 
 - breakpoints are hit
-- output files appear under `data/raw` and `data/gold`
+- rows appear in PostgreSQL tables such as `pipeline_runs`, `raw_air_pollution_responses`, and `air_pollution_gold`
 - the run ends without a traceback
 
 For the dashboard:
