@@ -13,9 +13,9 @@ package "City Air Tracker (Monorepo)" {
   component "Transform\nopenweather_air_pollution_transform.py" as tr
   component "Load\nstorage.py" as ld
   database "Postgres Raw Records\n(raw_air_pollution_responses)" as raw
-  database "Gold Dataset\n(data/gold/air_pollution_gold.parquet)" as gold
+  database "Gold Dataset\n(air_pollution_gold)" as gold
   database "Postgres" as pg
-  component "Dashboard\n(Streamlit)" as dash
+  component "Dashboard API + React UI\n(server.py + frontend)" as dash
   database "Postgres Cities\n(cities)" as cities
 }
 
@@ -28,7 +28,7 @@ cli --> tr
 tr --> ld : build gold DataFrame
 ld --> gold : optional parquet export
 ld --> pg : primary load target
-dash --> gold : read
+pg --> dash : query
 
 @enduml
 ```
@@ -44,7 +44,6 @@ participant "openweather_air_pollution.py" as EX
 participant "transform" as TR
 participant "load" as LD
 database "Postgres raw_air_pollution_responses" as RAW
-database "data/gold" as GOLD
 database "Postgres" as PG
 database "Postgres cities" as CITIES
 
@@ -59,6 +58,6 @@ end
 CLI -> TR: parse raw response records -> tidy DF
 CLI -> LD: publish gold dataset
 LD -> PG: write table
-LD -> GOLD: optionally write parquet
+PG -> CLI: data available for dashboard API
 @enduml
 ```

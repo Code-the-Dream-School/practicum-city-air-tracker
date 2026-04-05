@@ -439,6 +439,20 @@ input:focus-visible {
   width: 100%;
 }
 
+.button {
+  border: 0;
+  border-radius: 16px;
+  padding: 11px 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #6aa7ff, #79d4ff);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(92, 163, 255, 0.28);
+}
+
 .table-wrap {
   overflow: auto;
 }
@@ -502,6 +516,10 @@ input:focus-visible {
   max-width: 520px;
   padding: 28px;
   text-align: center;
+}
+
+.state-card .button {
+  margin-top: 16px;
 }
 
 .state-card--error {

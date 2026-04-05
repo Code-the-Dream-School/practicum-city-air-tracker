@@ -6,7 +6,7 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 2. Pulls OpenWeather Air Pollution historical data
 3. Transforms PostgreSQL-backed raw response records into a gold dataset
 4. Writes the gold dataset to PostgreSQL and can optionally export Parquet
-5. Serves a Streamlit dashboard over the gold dataset
+5. Serves a React dashboard backed by a Python API over PostgreSQL data
 
 The pipeline now uses DB-first gold persistence by default, with PostgreSQL as the primary gold-data target and Parquet export as an explicit optional setting.
 City configuration, geocoding cache, and raw extract persistence are also moving into PostgreSQL as runtime state.

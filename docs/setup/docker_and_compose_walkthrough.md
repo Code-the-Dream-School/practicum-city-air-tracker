@@ -80,42 +80,79 @@ Line-by-line explanation:
 Current file:
 
 ```dockerfile
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+COPY services/dashboard/frontend/package.json ./package.json
+COPY services/dashboard/frontend/vite.config.js ./vite.config.js
+COPY services/dashboard/frontend/index.html ./index.html
+COPY services/dashboard/frontend/src ./src
+RUN npm install
+RUN npm run build
+
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY requirements.txt /app/requirements.txt
+COPY services/dashboard/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY services/dashboard /app
+COPY services/dashboard/server.py /app/server.py
+COPY --from=frontend-builder /frontend/dist /app/static
 EXPOSE 8501
-CMD ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["python", "server.py"]
 ```
 
 Line-by-line explanation:
 
+- `FROM node:20-alpine AS frontend-builder`
+  Starts a frontend build stage for the React dashboard assets.
+
+- `WORKDIR /frontend`
+  Sets the working directory for the frontend build.
+
+- `COPY services/dashboard/frontend/package.json ./package.json`
+  Copies the React frontend package definition.
+
+- `COPY services/dashboard/frontend/vite.config.js ./vite.config.js`
+  Copies the Vite configuration.
+
+- `COPY services/dashboard/frontend/index.html ./index.html`
+  Copies the frontend HTML entrypoint.
+
+- `COPY services/dashboard/frontend/src ./src`
+  Copies the React source files.
+
+- `RUN npm install`
+  Installs the frontend build dependencies.
+
+- `RUN npm run build`
+  Produces the static React build under `dist/`.
+
 - `FROM python:3.11-slim`
-  Uses the official Python 3.11 slim image as the starting point for the dashboard container.
+  Starts the runtime image for the dashboard server.
 
 - `WORKDIR /app`
   Sets `/app` as the working directory inside the container.
 
-- `COPY requirements.txt /app/requirements.txt`
-  Copies the shared Python dependency list into the image.
+- `COPY services/dashboard/requirements.txt /app/requirements.txt`
+  Copies the dashboard server dependencies into the image.
 
 - `RUN pip install --no-cache-dir -r /app/requirements.txt`
-  Installs the Python dependencies needed by the dashboard.
-  The dashboard uses Streamlit and related Python libraries from the same requirements file.
+  Installs the Python dependencies needed by the dashboard server.
 
-- `COPY services/dashboard /app`
-  Copies the dashboard code into the image.
+- `COPY services/dashboard/server.py /app/server.py`
+  Copies the Python dashboard server into the image.
+
+- `COPY --from=frontend-builder /frontend/dist /app/static`
+  Copies the built React frontend assets into the runtime image.
 
 - `EXPOSE 8501`
   Documents that the container listens on port `8501`.
   This does not publish the port by itself; Docker Compose does that later.
 
-- `CMD ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]`
+- `CMD ["python", "server.py"]`
   Sets the default command for the dashboard container.
-  It launches the Streamlit app, tells it to use port `8501`, and binds to `0.0.0.0` so the app is reachable from outside the container.
+  It launches the Python dashboard server, which serves the React frontend and the PostgreSQL-backed dashboard API.
 
 ## `docker-compose.yml`
 
@@ -247,7 +284,8 @@ In this project, there are four services:
   Defines host mounts for the dashboard.
 
 - `- ./data:/app/data:ro`
-  Mounts the data folder read-only so the dashboard can read the generated parquet file.
+  Mounts the data folder read-only.
+  This is now mostly a compatibility mount rather than the dashboard's primary data path.
 
 - `- ./configs:/app/configs:ro`
   Mounts the config folder read-only.
@@ -266,8 +304,8 @@ In this project, there are four services:
   Starts the dashboard after the pipeline service is started.
   Note that this does not guarantee the pipeline has finished producing data; it only controls startup order.
 
-- `command: ["streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]`
-  Starts the Streamlit dashboard inside the container.
+- `command: ["python", "server.py"]`
+  Starts the Python dashboard server, which serves the React frontend and dashboard API.
 
 ### `postgres` service
 
@@ -343,12 +381,12 @@ Docker Compose does the following:
 1. builds the pipeline and dashboard images
 2. starts Postgres
 3. starts the pipeline job
-4. starts the Streamlit dashboard
+4. starts the React dashboard server
 5. starts Adminer
 
 The important idea is that:
 
 - the pipeline writes data into `./data`
-- the dashboard reads that same data from `./data`
-- Postgres is optional for serving the same dataset in database form
+- the dashboard primarily reads PostgreSQL through its backend API
+- `./data` remains useful for optional compatibility exports
 - Adminer helps you inspect Postgres visually

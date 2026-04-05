@@ -24,10 +24,9 @@ rectangle "Transform" {
   [openweather_air_pollution_transform.py] as TR
 }
 
-database "Gold\n(data/gold/air_pollution_gold.parquet)" as GOLD
-database "Postgres (optional)" as PG
+database "Gold\n(air_pollution_gold)" as GOLD
 rectangle "Serve" {
-  [Streamlit Dashboard] as DASH
+  [React Dashboard + Python API] as DASH
 }
 
 CITIES --> GEO
@@ -39,7 +38,6 @@ EX --> RAW
 
 RAW --> TR
 TR --> GOLD
-TR --> PG
 
 GOLD --> DASH
 @enduml
