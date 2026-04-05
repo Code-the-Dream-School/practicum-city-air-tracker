@@ -12,6 +12,7 @@ from .extract.cities import read_cities
 from .extract.geocoding import geocode_city
 from .extract.openweather_air_pollution import RawAirPollutionRecord, fetch_air_pollution_history
 from .load.storage import PublishResult, publish_outputs
+from .run_tracking import PipelineRunStatusUpdate, create_pipeline_run, update_pipeline_run_status
 from .transform.openweather_air_pollution_transform import build_gold_from_raw
 
 
@@ -20,6 +21,7 @@ log = get_logger(__name__)
 
 @dataclass(frozen=True)
 class PipelineRunResult:
+    pipeline_run_id: int
     run_id: str
     source: str
     history_hours: int
@@ -43,7 +45,9 @@ def build_runtime_window(history_hours: int) -> tuple[datetime, datetime]:
     return start, end
 
 
-def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str) -> list[RawAirPollutionRecord]:
+def run_extract_stage(
+    raw_dir: Path, start: datetime, end: datetime, run_id: str, pipeline_run_id: int
+) -> tuple[list[RawAirPollutionRecord], int]:
     cities_path = Path(settings.cities_file) if settings.cities_source == "file" else None
     cities = read_cities(cities_path)
     raw_records: list[RawAirPollutionRecord] = []
@@ -64,10 +68,11 @@ def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str
             start=start,
             end=end,
             run_id=run_id,
+            pipeline_run_id=pipeline_run_id,
         )
         raw_records.append(raw_record)
 
-    return raw_records
+    return raw_records, len(cities)
 
 
 def run_transform_stage(raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
@@ -85,29 +90,70 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
     raw_dir, gold_dir = ensure_output_directories()
     start, end = build_runtime_window(resolved_history_hours)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-
-    log.info("Starting pipeline", extra={"source": source, "history_hours": resolved_history_hours})
-
-    raw_records = run_extract_stage(raw_dir=raw_dir, start=start, end=end, run_id=run_id)
-    gold_df = run_transform_stage(raw_records=raw_records)
-    publish_result = run_load_stage(gold_df=gold_df, gold_dir=gold_dir)
-
-    result = PipelineRunResult(
+    pipeline_run_id = create_pipeline_run(
         run_id=run_id,
         source=source,
         history_hours=resolved_history_hours,
-        raw_records=raw_records,
-        gold_path=publish_result.gold_path,
-        postgres_table=publish_result.table_name,
-        rows=len(gold_df),
+        window_start_utc=start,
+        window_end_utc=end,
     )
 
-    log.info(
-        "Pipeline complete",
-        extra={
-            "gold_path": str(result.gold_path) if result.gold_path is not None else None,
-            "postgres_table": result.postgres_table,
-            "rows": result.rows,
-        },
-    )
-    return result
+    log.info("Starting pipeline", extra={"source": source, "history_hours": resolved_history_hours})
+    city_count = 0
+    raw_records: list[RawAirPollutionRecord] = []
+
+    try:
+        raw_records, city_count = run_extract_stage(
+            raw_dir=raw_dir,
+            start=start,
+            end=end,
+            run_id=run_id,
+            pipeline_run_id=pipeline_run_id,
+        )
+        gold_df = run_transform_stage(raw_records=raw_records)
+        publish_result = run_load_stage(gold_df=gold_df, gold_dir=gold_dir)
+
+        update_pipeline_run_status(
+            run_id,
+            PipelineRunStatusUpdate(
+                status="succeeded",
+                city_count=city_count,
+                raw_response_count=len(raw_records),
+                gold_row_count=len(gold_df),
+                finished_at=datetime.now(timezone.utc),
+            ),
+        )
+
+        result = PipelineRunResult(
+            pipeline_run_id=pipeline_run_id,
+            run_id=run_id,
+            source=source,
+            history_hours=resolved_history_hours,
+            raw_records=raw_records,
+            gold_path=publish_result.gold_path,
+            postgres_table=publish_result.table_name,
+            rows=len(gold_df),
+        )
+
+        log.info(
+            "Pipeline complete",
+            extra={
+                "pipeline_run_id": result.pipeline_run_id,
+                "gold_path": str(result.gold_path) if result.gold_path is not None else None,
+                "postgres_table": result.postgres_table,
+                "rows": result.rows,
+            },
+        )
+        return result
+    except Exception as exc:
+        update_pipeline_run_status(
+            run_id,
+            PipelineRunStatusUpdate(
+                status="failed",
+                city_count=city_count or None,
+                raw_response_count=len(raw_records) or None,
+                error_message=str(exc),
+                finished_at=datetime.now(timezone.utc),
+            ),
+        )
+        raise
