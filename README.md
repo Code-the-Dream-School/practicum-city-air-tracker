@@ -5,10 +5,10 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 1. Geocodes global cities to lat/lon
 2. Pulls OpenWeather Air Pollution historical data
 3. Transforms PostgreSQL-backed raw response records into a gold dataset
-4. Writes Parquet output and can optionally publish to Postgres
+4. Writes the gold dataset to PostgreSQL and can optionally export Parquet
 5. Serves a Streamlit dashboard over the gold dataset
 
-The migration path now supports DB-first load behavior, where PostgreSQL can be the primary load target and Parquet export is an explicit setting.
+The pipeline now uses DB-first gold persistence by default, with PostgreSQL as the primary gold-data target and Parquet export as an explicit optional setting.
 City configuration, geocoding cache, and raw extract persistence are also moving into PostgreSQL as runtime state.
 
 ## Main run guide

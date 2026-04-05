@@ -75,8 +75,10 @@ The expected bootstrap validation flow is:
 
 1. start PostgreSQL
 2. run `alembic upgrade head`
-3. verify the migration completes without error
-4. verify the expected tables exist
+3. seed cities with `python -m pipeline.cli --seed-cities`
+4. run the pipeline and verify `air_pollution_gold` is populated in PostgreSQL
+5. verify the migration completes without error
+6. verify the expected tables exist
 
 Example table check:
 
@@ -84,7 +86,14 @@ Example table check:
 psql postgresql://cityair:cityair@localhost:5432/cityair -c "\\dt"
 ```
 
+Example gold-row check:
+
+```bash
+psql postgresql://cityair:cityair@localhost:5432/cityair -c "select count(*) from air_pollution_gold;"
+```
+
 ## Notes
 
 - The baseline migration is the first schema version for the PostgreSQL-first MVP.
+- Normal pipeline runs now expect PostgreSQL to be the primary gold-data target.
 - Later schema changes should be added as new Alembic revision files rather than editing the baseline migration after it has been applied in shared environments.

@@ -104,9 +104,9 @@ If you want to run this project locally without Docker, use Python plus a virtua
 
 Important:
 
-- PostgreSQL is optional on this branch.
+- PostgreSQL is the primary gold-data target on this branch.
 - The dashboard reads the Parquet file, not Postgres.
-- For runnig the application locally without Docker, the simplest supported setup is `USE_POSTGRES=0`.
+- For running the application locally without Docker, you should have PostgreSQL available and keep `USE_POSTGRES=1`.
 - The checked-in `.env.example` is Docker-oriented, so you must change it for local runs.
 
 ### Exact `.env` values for local-without-Docker
@@ -134,8 +134,9 @@ AZURE_STORAGE_CONNECTION_STRING=
 AZURE_STORAGE_ACCOUNT_NAME=
 AZURE_STORAGE_ACCOUNT_KEY=
 
-# Optional Postgres load
-USE_POSTGRES=0
+# PostgreSQL is the primary gold target
+USE_POSTGRES=1
+WRITE_GOLD_PARQUET=0
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=cityair
@@ -152,7 +153,8 @@ DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 - `CITIES_FILE=configs/cities.csv` points the seed/import workflow to the checked-in city list on your machine.
 - `DATA_DIR`, `RAW_DIR`, and `GOLD_DIR` must use local paths, not `/app/...` container paths.
 - `DASHBOARD_DATA_PATH` must point to the Parquet file created by the local pipeline run.
-- `USE_POSTGRES=0` prevents the pipeline from trying to connect to a Postgres server you may not have running.
+- `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target during local runs.
+- `WRITE_GOLD_PARQUET=0` keeps Parquet export disabled unless you explicitly want a secondary file artifact.
 
 ### Exact commands to run locally without Docker
 
@@ -187,7 +189,8 @@ http://localhost:8501
 These are the expected results:
 
 - PostgreSQL stores raw OpenWeather air-pollution responses and extract metadata for the DB-first migration path
-- `data/gold/air_pollution_gold.parquet` exists
+- PostgreSQL stores the gold dataset in `air_pollution_gold`
+- `data/gold/air_pollution_gold.parquet` exists only if `WRITE_GOLD_PARQUET=1`
 - the Streamlit app starts without the "Gold dataset not found" warning
 - the dashboard shows row and city metrics
 
@@ -225,7 +228,8 @@ DATA_DIR=./data
 RAW_DIR=./data/raw
 GOLD_DIR=./data/gold
 DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
-USE_POSTGRES=0
+USE_POSTGRES=1
+WRITE_GOLD_PARQUET=0
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=cityair
@@ -503,7 +507,7 @@ Healthy signs:
 
 After the pipeline finishes, these checks should pass:
 
-1. The gold data file exists at `data/gold/air_pollution_gold.parquet`.
+1. The gold data is available in PostgreSQL table `air_pollution_gold`.
 2. The raw cache exists under `data/raw`.
 3. The dashboard opens at <http://localhost:8501>.
 4. Adminer opens at <http://localhost:8080>.
@@ -516,8 +520,8 @@ docker compose exec postgres psql -U cityair -d cityair -c "\\dt"
 
 Notes:
 
-- On this branch, Postgres and Adminer start even when `USE_POSTGRES=0`.
-- The pipeline only writes to Postgres if `USE_POSTGRES=1` is set in `.env`.
+- On this branch, Postgres is part of the normal runtime path and should stay enabled.
+- Parquet export remains optional and only runs when `WRITE_GOLD_PARQUET=1`.
 
 #### Step 9: Stop the application
 

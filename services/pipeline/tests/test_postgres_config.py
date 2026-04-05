@@ -1,6 +1,13 @@
 from pipeline.common.config import Settings
 
 
+def test_default_gold_target_is_postgres_first():
+    settings = Settings()
+
+    assert settings.use_postgres is True
+    assert settings.write_gold_parquet is False
+
+
 def test_postgres_sqlalchemy_url_uses_postgres_settings():
     settings = Settings(
         postgres_host="db.example",
