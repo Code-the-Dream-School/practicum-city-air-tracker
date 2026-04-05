@@ -22,6 +22,14 @@ Use `docs/setup/run_and_debug_guide.md` for:
 - Docker Compose installation
 - Docker Compose configuration, launch, and verification
 
+Use `docs/setup/local_postgresql_first_workflow.md` for the consolidated local PostgreSQL-first workflow:
+
+- schema bootstrap
+- city seeding
+- pipeline run commands
+- PostgreSQL verification queries
+- DB-native test commands
+
 ## One-command local environment setup
 
 If you want a quick local Python setup, use the bootstrap script for your OS.
@@ -63,6 +71,19 @@ python -m pipeline.cli --source openweather --history-hours 72
 ```
 
 This is the preferred local run path because it matches the packaged production-style entrypoint used by the pipeline service.
+
+## PostgreSQL-first local workflow
+
+For the shortest path to a working local DB-first run, start here:
+
+- `docs/setup/local_postgresql_first_workflow.md`
+
+Quick sequence:
+
+1. `alembic upgrade head`
+2. `python -m pipeline.cli --seed-cities`
+3. `python -m pipeline.cli --source openweather --history-hours 72`
+4. verify `pipeline_runs` and `air_pollution_gold` in PostgreSQL
 
 ## PostgreSQL schema bootstrap
 
@@ -145,6 +166,7 @@ Normal pipeline execution reads active cities from PostgreSQL when `CITIES_SOURC
 
 Browse `docs/README.md` for the full categorized index.
 
+- `docs/setup/local_postgresql_first_workflow.md`
 - `docs/setup/run_and_debug_guide.md`
 - `docs/setup/docker_and_compose_walkthrough.md`
 - `docs/setup/github_quality_gates_setup.md`
