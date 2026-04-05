@@ -44,13 +44,12 @@ POSTGRES_DB=cityair
 POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
 
-DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 ```
 
 Notes:
 
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target.
-- `WRITE_GOLD_PARQUET=0` disables Parquet unless you explicitly want a secondary export.
+- `WRITE_GOLD_PARQUET=0` disables Parquet unless you explicitly want a secondary export for debugging or compatibility.
 - `CITIES_SOURCE=postgres` means normal pipeline runs read cities from the database.
 - `CITIES_FILE` is still used for the seed/import step.
 
@@ -123,7 +122,7 @@ psql postgresql://cityair:cityair@localhost:5432/cityair -c "select count(*) fro
 Optional checks:
 
 - inspect `geocoding_cache` to confirm cached coordinates were stored
-- enable `WRITE_GOLD_PARQUET=1` if you want a secondary Parquet export for dashboard compatibility
+- enable `WRITE_GOLD_PARQUET=1` only if you intentionally want a secondary Parquet export
 
 ## 6. Run DB-native tests
 
@@ -152,14 +151,10 @@ For local debugging:
 - leave `WRITE_GOLD_PARQUET=0` unless you need a file artifact for dashboard debugging
 
 The current dashboard still reads Parquet, so dashboard debugging is a temporary exception to the DB-first runtime path.
-
-If you need the dashboard locally, either:
-
-- enable `WRITE_GOLD_PARQUET=1` before running the pipeline, or
-- wait until the dashboard is migrated to PostgreSQL
+The React dashboard runs from `services/dashboard/server.py` and reads PostgreSQL-backed data through `/api/dashboard`.
 
 ## Current limitations
 
 - PostgreSQL is the primary runtime store for the pipeline.
-- The Streamlit dashboard still expects a Parquet file.
-- Parquet is now a secondary compatibility artifact, not the primary gold-data contract.
+- The dashboard API and frontend depend on the dashboard server and built React assets.
+- Parquet is a secondary compatibility artifact, not the primary gold-data contract.

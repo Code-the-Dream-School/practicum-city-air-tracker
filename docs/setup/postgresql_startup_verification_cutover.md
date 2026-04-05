@@ -27,7 +27,7 @@ The PostgreSQL-first pipeline should start in this order:
 3. seed cities into the `cities` table
 4. run the pipeline
 5. verify `pipeline_runs`, `raw_air_pollution_responses`, and `air_pollution_gold`
-6. enable optional Parquet export only if you need dashboard compatibility
+6. enable optional Parquet export only if you explicitly need a secondary file artifact
 
 ### Local Python startup
 
@@ -161,7 +161,7 @@ Use this sequence when moving a shared environment from earlier file-first expec
 3. seed or refresh `cities`
 4. run one validation pipeline job
 5. verify `pipeline_runs`, raw responses, and gold rows
-6. confirm any remaining Parquet dependency is intentional
+6. confirm any remaining Parquet export is intentional
 7. treat PostgreSQL as the primary runtime source of truth
 
 ### Cutover checkpoints
@@ -174,7 +174,7 @@ Before declaring cutover complete, confirm:
 - raw responses are written or reused correctly
 - gold rows are present and deduplicated
 - logs reflect DB-backed completion rather than file-backed success
-- any dashboard or downstream Parquet dependency is known and explicitly temporary
+- any remaining downstream Parquet dependency is known and explicitly temporary
 
 ## Rollback guidance
 
@@ -199,6 +199,6 @@ If a temporary compatibility rollback is necessary:
 ## Known temporary limitations
 
 - the pipeline is PostgreSQL-first
-- the Streamlit dashboard still reads Parquet
+- the dashboard is the React frontend served by `services/dashboard/server.py`
 - Parquet is a secondary compatibility artifact, not the primary gold-data contract
-- cutover is not fully complete for the user-facing app until the dashboard reads PostgreSQL directly
+- cutover still depends on the dashboard server being deployed with built frontend assets

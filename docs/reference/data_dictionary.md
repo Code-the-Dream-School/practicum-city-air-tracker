@@ -1,6 +1,6 @@
 # Data Dictionary (POC)
 
-## air_pollution_gold.parquet
+## air_pollution_gold
 
 | Column | Type | Description |
 |---|---:|---|
@@ -23,4 +23,4 @@
 | aqi_category | string | Derived category label |
 | risk_score | float | Derived score (rule-based in POC) |
 
-This schema reflects the current transform output used by the Streamlit dashboard on this branch.
+This schema reflects the current transform output served to the React dashboard through the dashboard API.

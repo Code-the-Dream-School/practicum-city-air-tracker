@@ -4,7 +4,7 @@
 
 This guide helps reviewers give consistent, useful pull request feedback for the City Air Tracker repository.
 
-It is project-specific on purpose. The best PR reviews do not only check style. They confirm that a change is safe for this codebase's pipeline, Streamlit dashboard, local development workflow, and documentation.
+It is project-specific on purpose. The best PR reviews do not only check style. They confirm that a change is safe for this codebase's pipeline, React dashboard, local development workflow, and documentation.
 
 Use this guide together with the existing branch and pull request workflow materials in `docs/`.
 
@@ -81,21 +81,20 @@ Relevant areas often include:
 
 #### Dashboard changes
 
-This branch uses a Streamlit dashboard that reads the gold Parquet dataset directly.
+This branch uses a React dashboard served by `services/dashboard/server.py` and backed by PostgreSQL queries.
 
 Focus on:
 
-- whether the dashboard still reads the expected gold dataset path
+- whether the dashboard server still returns the expected payload shape
 - loading, empty, and warning states
 - whether metrics and labels still reflect the underlying dataset correctly
 - whether tables and charts still work with current gold-schema fields
-- whether dashboard pages remain usable after pipeline schema or config changes
+- whether the frontend remains usable after dashboard API or pipeline schema changes
 
 Relevant areas often include:
 
-- `services/dashboard/app/Home.py`
-- `services/dashboard/app/pages/1_City_Trends.py`
-- `services/dashboard/app/pages/2_Compare_Cities.py`
+- `services/dashboard/server.py`
+- `services/dashboard/frontend/src`
 - `services/dashboard/Dockerfile`
 - `docker-compose.yml`
 
@@ -159,9 +158,9 @@ For this project, examples of useful validation include:
 - `pytest services/pipeline/tests -q`
 - targeted test files for changed pipeline behavior
 - `python services/pipeline/run_pipeline.py --source openweather --history-hours 72`
-- `streamlit run services/dashboard/app/Home.py`
+- `python services/dashboard/server.py`
 - `docker compose up --build`
-- verifying `data/gold/air_pollution_gold.parquet` is created
+- verifying `/api/dashboard` returns the expected payload
 - verifying the dashboard renders expected metrics and tables after a pipeline run
 
 ### Maintainability
@@ -188,7 +187,7 @@ Try to make each comment easy to act on. Good review comments usually include:
 
 Examples:
 
-- "This changes the gold dataset fields used by the Streamlit pages, but I do not see the dashboard updated. Could this break `1_City_Trends.py` or `2_Compare_Cities.py`?"
+- "This changes the gold dataset fields surfaced through the dashboard API, but I do not see the React dashboard updated. Could this break the overview, trends, or compare views?"
 - "The retry path handles 429 responses, but I do not see a test for exhausted retries. Can we add one?"
 - "This adds a new environment variable. Please update the README setup section so local contributors do not miss it."
 
@@ -217,10 +216,10 @@ This reduces confusion and helps authors prioritize.
 
 ### Common risks in dashboard PRs
 
-- Streamlit pages that assume fields that no longer exist in the gold dataset
+- React views that assume fields that no longer exist in the dashboard API payload
 - pages that work with full data but fail with empty or partial data
 - misleading metric labels or sort orders
-- hard-coded paths that do not match `DASHBOARD_DATA_PATH`
+- frontend/server assumptions drifting apart
 
 ### Common risks in docs and setup PRs
 

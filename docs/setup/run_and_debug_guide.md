@@ -28,7 +28,8 @@ What they are used for on this branch:
 - `duckdb`: included as a dependency, not currently required by the main runtime path
 - `sqlalchemy`, `psycopg[binary]`: PostgreSQL connectivity
 - `alembic`: PostgreSQL schema versioning and bootstrap
-- `streamlit`, `plotly`: dashboard
+- dashboard frontend assets are built with the React/Vite app under `services/dashboard/frontend`
+- the dashboard Python server lives in `services/dashboard/server.py`
 - `pytest`: tests
 
 ## 2. How to install Python and the Python libraries
@@ -107,7 +108,7 @@ For the most direct DB-first setup and validation path, use [local_postgresql_fi
 Important:
 
 - PostgreSQL is the primary gold-data target on this branch.
-- The dashboard reads the Parquet file, not Postgres.
+- The React dashboard reads PostgreSQL-backed data through the dashboard server API.
 - For running the application locally without Docker, you should have PostgreSQL available and keep `USE_POSTGRES=1`.
 - The checked-in `.env.example` is Docker-oriented, so you must change it for local runs.
 
@@ -145,8 +146,6 @@ POSTGRES_DB=cityair
 POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
 
-# ---- Dashboard ----
-DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 ```
 
 ### Why these local values matter
@@ -154,7 +153,6 @@ DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 - `CITIES_SOURCE=postgres` makes PostgreSQL the runtime source of truth for city selection.
 - `CITIES_FILE=configs/cities.csv` points the seed/import workflow to the checked-in city list on your machine.
 - `DATA_DIR`, `RAW_DIR`, and `GOLD_DIR` must use local paths, not `/app/...` container paths.
-- `DASHBOARD_DATA_PATH` must point to the Parquet file created by the local pipeline run.
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target during local runs.
 - `WRITE_GOLD_PARQUET=0` keeps Parquet export disabled unless you explicitly want a secondary file artifact.
 
@@ -177,7 +175,7 @@ python services/pipeline/run_pipeline.py --source openweather --history-hours 72
 3. Start the dashboard:
 
 ```bash
-streamlit run services/dashboard/app/Home.py
+python services/dashboard/server.py
 ```
 
 4. Open the dashboard:
@@ -193,7 +191,7 @@ These are the expected results:
 - PostgreSQL stores raw OpenWeather air-pollution responses and extract metadata for the DB-first migration path
 - PostgreSQL stores the gold dataset in `air_pollution_gold`
 - `data/gold/air_pollution_gold.parquet` exists only if `WRITE_GOLD_PARQUET=1`
-- the Streamlit app starts without the "Gold dataset not found" warning
+- the dashboard server starts successfully on port `8501`
 - the dashboard shows row and city metrics
 
 If you only want to validate the pipeline and database behavior, you can stop after the PostgreSQL verification steps in [local_postgresql_first_workflow.md](/home/eugen/code-the-dream-workspace/practicum-city-air-tracker/docs/setup/local_postgresql_first_workflow.md) and skip the dashboard.
@@ -232,7 +230,6 @@ CITIES_FILE=configs/cities.csv
 DATA_DIR=./data
 RAW_DIR=./data/raw
 GOLD_DIR=./data/gold
-DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 USE_POSTGRES=1
 WRITE_GOLD_PARQUET=0
 POSTGRES_HOST=localhost
@@ -282,22 +279,18 @@ Create `.vscode/launch.json` with content like this:
       }
     },
     {
-      "name": "Dashboard: Streamlit",
+      "name": "Dashboard: React server",
       "type": "debugpy",
       "request": "launch",
-      "module": "streamlit",
+      "program": "${workspaceFolder}/services/dashboard/server.py",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
-      "args": [
-        "run",
-        "services/dashboard/app/Home.py",
-        "--server.port",
-        "8501",
-        "--server.address",
-        "127.0.0.1"
-      ],
       "env": {
-        "DASHBOARD_DATA_PATH": "${workspaceFolder}/data/gold/air_pollution_gold.parquet"
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DB": "cityair",
+        "POSTGRES_USER": "cityair",
+        "POSTGRES_PASSWORD": "cityair"
       }
     }
   ]
@@ -316,7 +309,7 @@ Create `.vscode/launch.json` with content like this:
    - `services/pipeline/src/pipeline/extract/openweather_air_pollution.py`
    - `services/pipeline/src/pipeline/transform/openweather_air_pollution_transform.py`
 6. Start debugging with `F5`.
-7. If you also want to debug the dashboard, enable `WRITE_GOLD_PARQUET=1`, rerun the pipeline, and then run `Dashboard: Streamlit`.
+7. If you also want to debug the dashboard, run `Dashboard: React server` after the pipeline has populated PostgreSQL.
 
 ### How to verify local debugging is working
 
@@ -328,9 +321,9 @@ For the pipeline:
 
 For the dashboard:
 
-- VS Code starts Streamlit without import errors
+- VS Code starts the dashboard server without import errors
 - <http://127.0.0.1:8501> opens successfully
-- the dashboard shows row and city counts instead of the "Gold dataset not found" warning
+- the dashboard shows row and city counts loaded from PostgreSQL
 
 ## 5. Docker Compose setup and launch
 
@@ -346,8 +339,8 @@ You do need:
 
 For this repository, Docker Compose starts these services:
 
-- `pipeline`: one-time ETL job that fetches air-quality data and writes output files
-- `dashboard`: Streamlit UI on port `8501`
+- `pipeline`: one-time ETL job that fetches air-quality data and writes PostgreSQL-backed output
+- `dashboard`: React frontend served by the Python dashboard server on port `8501`
 - `postgres`: PostgreSQL on port `5432`
 - `adminer`: Adminer UI on port `8080`
 
@@ -441,7 +434,6 @@ CITIES_FILE=/app/configs/cities.csv
 DATA_DIR=/app/data
 RAW_DIR=/app/data/raw
 GOLD_DIR=/app/data/gold
-DASHBOARD_DATA_PATH=/app/data/gold/air_pollution_gold.parquet
 ```
 
 #### Step 5: Review or edit the city list
@@ -508,7 +500,7 @@ Healthy signs:
 
 - The pipeline logs end without a traceback
 - The pipeline logs include completion output
-- The dashboard logs show Streamlit started successfully
+- The dashboard logs show the dashboard server started successfully
 
 #### Step 8: Verify outputs
 
@@ -555,7 +547,7 @@ Check:
 docker compose version
 ```
 
-#### The dashboard page says the gold dataset was not found
+#### The dashboard API returns no rows
 
 Likely causes:
 
@@ -599,7 +591,7 @@ Project files:
 - `services/dashboard/Dockerfile`
 - `services/pipeline/src/pipeline/common/config.py`
 - `services/pipeline/src/pipeline/load/storage.py`
-- `services/dashboard/app/Home.py`
+- `services/dashboard/server.py`
 
 Official external docs:
 
