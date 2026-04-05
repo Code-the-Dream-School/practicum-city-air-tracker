@@ -50,19 +50,6 @@ cities_table = sa.Table(
     sa.Column("state", sa.Text()),
 )
 
-pipeline_runs_table = sa.Table(
-    "pipeline_runs",
-    metadata,
-    sa.Column("id", sa.BigInteger()),
-    sa.Column("run_id", sa.Text()),
-    sa.Column("source", sa.Text()),
-    sa.Column("history_hours", sa.Integer()),
-    sa.Column("window_start_utc", sa.DateTime(timezone=True)),
-    sa.Column("window_end_utc", sa.DateTime(timezone=True)),
-    sa.Column("status", sa.Text()),
-    sa.Column("started_at", sa.DateTime(timezone=True)),
-)
-
 raw_air_pollution_responses_table = sa.Table(
     "raw_air_pollution_responses",
     metadata,
@@ -105,36 +92,6 @@ def _lookup_city_id(connection, city: str, country_code: str) -> int:
     if row is None:
         raise ValueError(f"City must exist in the cities table before extraction: {city},{country_code}")
     return int(row[0])
-
-
-def _ensure_pipeline_run(connection, run_id: str, start: datetime, end: datetime) -> int:
-    row = connection.execute(
-        sa.select(pipeline_runs_table.c.id).where(pipeline_runs_table.c.run_id == run_id)
-    ).fetchone()
-    if row is not None:
-        return int(row[0])
-
-    result = connection.execute(
-        pipeline_runs_table.insert().values(
-            run_id=run_id,
-            source="openweather",
-            history_hours=int((end - start).total_seconds() // 3600),
-            window_start_utc=start,
-            window_end_utc=end,
-            status="running",
-            started_at=datetime.now(timezone.utc),
-        )
-    )
-    inserted_primary_key = result.inserted_primary_key
-    inserted_id = inserted_primary_key[0] if inserted_primary_key else None
-    if inserted_id is None:
-        row = connection.execute(
-            sa.select(pipeline_runs_table.c.id).where(pipeline_runs_table.c.run_id == run_id)
-        ).fetchone()
-        if row is None:
-            raise ValueError(f"Unable to persist pipeline run metadata for run_id={run_id}")
-        return int(row[0])
-    return int(inserted_id)
 
 
 def _build_record(
@@ -190,6 +147,7 @@ def fetch_air_pollution_history(
     start: datetime,
     end: datetime,
     run_id: str,
+    pipeline_run_id: int,
 ) -> RawAirPollutionRecord:
     del raw_dir
 
@@ -201,7 +159,6 @@ def fetch_air_pollution_history(
 
     with engine.begin() as connection:
         city_id = _lookup_city_id(connection, city=city, country_code=country_code)
-        pipeline_run_id = _ensure_pipeline_run(connection, run_id=run_id, start=start, end=end)
         existing = _find_existing_raw_response(connection, city_id=city_id, start=start, end=end)
 
         if existing is not None:
@@ -233,7 +190,6 @@ def fetch_air_pollution_history(
 
     with engine.begin() as connection:
         city_id = _lookup_city_id(connection, city=city, country_code=country_code)
-        pipeline_run_id = _ensure_pipeline_run(connection, run_id=run_id, start=start, end=end)
         result = connection.execute(
             raw_air_pollution_responses_table.insert().values(
                 pipeline_run_id=pipeline_run_id,

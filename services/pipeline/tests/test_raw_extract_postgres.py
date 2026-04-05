@@ -55,6 +55,8 @@ def _build_sqlite_engine(db_path: Path):
 
 def test_fetch_air_pollution_history_persists_raw_response(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     engine = _build_sqlite_engine(tmp_path / "raw-extract.db")
+    start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    end = datetime(2025, 1, 2, tzinfo=timezone.utc)
     with engine.begin() as connection:
         connection.execute(
             text(
@@ -63,6 +65,19 @@ def test_fetch_air_pollution_history_persists_raw_response(monkeypatch: pytest.M
                 VALUES ('Toronto', 'CA', 'ON', 1)
                 """
             )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO pipeline_runs (
+                    id, run_id, source, history_hours, window_start_utc, window_end_utc, status, started_at
+                )
+                VALUES (
+                    1, '20250405T000000Z', 'openweather', 24, :start, :end, 'running', :start
+                )
+                """
+            ),
+            {"start": start, "end": end},
         )
 
     class DummyResponse:
@@ -84,8 +99,6 @@ def test_fetch_air_pollution_history_persists_raw_response(monkeypatch: pytest.M
     monkeypatch.setattr(air_module, "get_with_retries", lambda *args, **kwargs: DummyResponse())
     monkeypatch.setattr(air_module.settings, "openweather_api_key", "test-key")
 
-    start = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    end = datetime(2025, 1, 2, tzinfo=timezone.utc)
     record = air_module.fetch_air_pollution_history(
         raw_dir=tmp_path,
         city="Toronto",
@@ -95,6 +108,7 @@ def test_fetch_air_pollution_history_persists_raw_response(monkeypatch: pytest.M
         start=start,
         end=end,
         run_id="20250405T000000Z",
+        pipeline_run_id=1,
     )
 
     assert record.city == "Toronto"
@@ -179,6 +193,7 @@ def test_fetch_air_pollution_history_reuses_existing_raw_response(
         start=start,
         end=end,
         run_id="20250405T000000Z",
+        pipeline_run_id=1,
     )
 
     assert record.record_count == 1
