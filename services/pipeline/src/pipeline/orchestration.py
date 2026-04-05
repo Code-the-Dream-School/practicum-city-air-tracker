@@ -10,7 +10,7 @@ from .common.config import settings
 from .common.logging import get_logger
 from .extract.cities import read_cities
 from .extract.geocoding import geocode_city
-from .extract.openweather_air_pollution import fetch_air_pollution_history
+from .extract.openweather_air_pollution import RawAirPollutionRecord, fetch_air_pollution_history
 from .load.storage import PublishResult, publish_outputs
 from .transform.openweather_air_pollution_transform import build_gold_from_raw
 
@@ -23,7 +23,7 @@ class PipelineRunResult:
     run_id: str
     source: str
     history_hours: int
-    raw_files: list[Path]
+    raw_records: list[RawAirPollutionRecord]
     gold_path: Path | None
     postgres_table: str | None
     rows: int
@@ -43,10 +43,10 @@ def build_runtime_window(history_hours: int) -> tuple[datetime, datetime]:
     return start, end
 
 
-def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str) -> list[Path]:
+def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str) -> list[RawAirPollutionRecord]:
     cities_path = Path(settings.cities_file) if settings.cities_source == "file" else None
     cities = read_cities(cities_path)
-    raw_files: list[Path] = []
+    raw_records: list[RawAirPollutionRecord] = []
 
     for city in cities:
         coords = geocode_city(
@@ -55,7 +55,7 @@ def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str
             country_code=city.country_code,
             state=city.state,
         )
-        raw_path = fetch_air_pollution_history(
+        raw_record = fetch_air_pollution_history(
             raw_dir=raw_dir,
             city=city.city,
             country_code=city.country_code,
@@ -65,13 +65,13 @@ def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str
             end=end,
             run_id=run_id,
         )
-        raw_files.append(raw_path)
+        raw_records.append(raw_record)
 
-    return raw_files
+    return raw_records
 
 
-def run_transform_stage(raw_files: list[Path]) -> pd.DataFrame:
-    return build_gold_from_raw(raw_files=raw_files)
+def run_transform_stage(raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
+    return build_gold_from_raw(raw_records=raw_records)
 
 
 def run_load_stage(
@@ -88,15 +88,15 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
 
     log.info("Starting pipeline", extra={"source": source, "history_hours": resolved_history_hours})
 
-    raw_files = run_extract_stage(raw_dir=raw_dir, start=start, end=end, run_id=run_id)
-    gold_df = run_transform_stage(raw_files=raw_files)
+    raw_records = run_extract_stage(raw_dir=raw_dir, start=start, end=end, run_id=run_id)
+    gold_df = run_transform_stage(raw_records=raw_records)
     publish_result = run_load_stage(gold_df=gold_df, gold_dir=gold_dir)
 
     result = PipelineRunResult(
         run_id=run_id,
         source=source,
         history_hours=resolved_history_hours,
-        raw_files=raw_files,
+        raw_records=raw_records,
         gold_path=publish_result.gold_path,
         postgres_table=publish_result.table_name,
         rows=len(gold_df),
