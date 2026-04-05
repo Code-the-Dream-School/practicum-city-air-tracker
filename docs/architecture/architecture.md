@@ -12,21 +12,22 @@ package "City Air Tracker (Monorepo)" {
   component "Air Pollution Extractor\n(history 72h)\nopenweather_air_pollution.py" as ex
   component "Transform\nopenweather_air_pollution_transform.py" as tr
   component "Load\nstorage.py" as ld
-  database "Raw Cache\n(data/raw/openweather/...)" as raw
+  database "Postgres Raw Records\n(raw_air_pollution_responses)" as raw
   database "Gold Dataset\n(data/gold/air_pollution_gold.parquet)" as gold
-  database "Postgres (optional)" as pg
+  database "Postgres" as pg
   component "Dashboard\n(Streamlit)" as dash
-  file "cities.csv" as cities
+  database "Postgres Cities\n(cities)" as cities
 }
 
 cities --> cli
 cli --> geo
 geo --> raw : cache coords
 cli --> ex
-ex --> raw : write raw JSON + manifest
+ex --> raw : write raw responses + extract metadata
 cli --> tr
-tr --> gold : write parquet
-ld --> pg : optional
+tr --> ld : build gold DataFrame
+ld --> gold : optional parquet export
+ld --> pg : primary load target
 dash --> gold : read
 
 @enduml
@@ -42,22 +43,22 @@ participant "geocoding.py" as GEO
 participant "openweather_air_pollution.py" as EX
 participant "transform" as TR
 participant "load" as LD
-database "data/raw" as RAW
+database "Postgres raw_air_pollution_responses" as RAW
 database "data/gold" as GOLD
 database "Postgres" as PG
-file "configs/cities.csv" as CITIES
+database "Postgres cities" as CITIES
 
 User -> CLI: run --history-hours 72
-CLI -> CITIES: read list
+CLI -> CITIES: read active cities
 loop per city
   CLI -> GEO: city+country -> lat/lon
   GEO -> RAW: cache geocode result
   CLI -> EX: fetch history(lat,lon,start,end)
-  EX -> RAW: write response json + manifest
+  EX -> RAW: write or reuse raw response record
 end
-CLI -> TR: parse raw json -> tidy DF
-TR -> GOLD: write parquet
-CLI -> LD: optionally publish to DB
-LD -> PG: write table (if enabled)
+CLI -> TR: parse raw response records -> tidy DF
+CLI -> LD: publish gold dataset
+LD -> PG: write table
+LD -> GOLD: optionally write parquet
 @enduml
 ```

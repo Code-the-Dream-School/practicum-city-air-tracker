@@ -45,7 +45,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
             fetched_at=kwargs["end"],
         )
 
-    def fake_build_gold_from_raw(*, raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
+    def fake_build_gold_from_raw_records(*, raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
         captured["raw_records"] = raw_records
         return pd.DataFrame([{"geo_id": "Toronto,CA", "ts": "2026-03-17T00:00:00Z"}])
 
@@ -60,7 +60,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     monkeypatch.setattr(orchestration, "read_cities", fake_read_cities)
     monkeypatch.setattr(orchestration, "geocode_city", lambda **_: SimpleNamespace(lat=43.6535, lon=-79.3839))
     monkeypatch.setattr(orchestration, "fetch_air_pollution_history", fake_fetch_air_pollution_history)
-    monkeypatch.setattr(orchestration, "build_gold_from_raw", fake_build_gold_from_raw)
+    monkeypatch.setattr(orchestration, "build_gold_from_raw_records", fake_build_gold_from_raw_records)
     monkeypatch.setattr(orchestration, "publish_outputs", fake_publish_outputs)
     monkeypatch.setattr(orchestration, "create_pipeline_run", lambda **kwargs: 101)
     monkeypatch.setattr(orchestration, "update_pipeline_run_status", lambda run_id, update: status_updates.append((run_id, update)))
