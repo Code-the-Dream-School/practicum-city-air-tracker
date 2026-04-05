@@ -28,6 +28,7 @@ Use these docs when you want to understand system structure, data flow, or dashb
 
 - `architecture/architecture.md`
 - `architecture/data_flow_diagram.md`
+- `architecture/postgresql_schema_design.md`
 - `architecture/application_architecture_guide.pdf`
 - `architecture/City_Air_Tracker_Architecture_Diagram.pdf`
 - `architecture/City_Air_Tracker_DataFlow_Diagram.pdf`
