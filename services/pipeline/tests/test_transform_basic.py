@@ -33,5 +33,8 @@ def test_build_gold_from_raw_records_parses_list():
 
     df = build_gold_from_raw_records([raw_record])
     assert len(df) == 1
+    assert df.loc[df.index[0], "pipeline_run_id"] == 1
+    assert df.loc[df.index[0], "raw_response_id"] == 1
+    assert df.loc[df.index[0], "city_id"] == 1
     assert "risk_score" in df.columns
     assert df.loc[df.index[0], "aqi_category"] in {"Good","Fair","Moderate","Poor","Very Poor","Unknown"}

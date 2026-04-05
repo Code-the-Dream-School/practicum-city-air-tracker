@@ -27,6 +27,9 @@ def build_gold_from_raw_records(raw_records: list[RawAirPollutionRecord]) -> pd.
             comps = item.get("components", {})
 
             row = {
+                "pipeline_run_id": raw_record.pipeline_run_id,
+                "raw_response_id": raw_record.raw_response_id,
+                "city_id": raw_record.city_id,
                 "ts": ts,
                 "city": city,
                 "country_code": country_code,
