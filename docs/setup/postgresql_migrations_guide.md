@@ -116,3 +116,5 @@ pytest services/pipeline/tests/test_postgres_config.py \
   services/pipeline/tests/test_orchestration_runner.py \
   services/pipeline/tests/test_db_native_pipeline_integration.py
 ```
+
+For startup sequencing, verification checks, and cutover guidance, use [postgresql_startup_verification_cutover.md](/home/eugen/code-the-dream-workspace/practicum-city-air-tracker/docs/setup/postgresql_startup_verification_cutover.md).

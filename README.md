@@ -22,6 +22,13 @@ Use `docs/setup/run_and_debug_guide.md` for:
 - Docker Compose installation
 - Docker Compose configuration, launch, and verification
 
+Use `docs/setup/postgresql_startup_verification_cutover.md` for the rollout/runbook view:
+
+- startup order
+- verification checklist
+- cutover checkpoints
+- rollback guidance
+
 ## One-command local environment setup
 
 If you want a quick local Python setup, use the bootstrap script for your OS.
@@ -145,6 +152,7 @@ Normal pipeline execution reads active cities from PostgreSQL when `CITIES_SOURC
 
 Browse `docs/README.md` for the full categorized index.
 
+- `docs/setup/postgresql_startup_verification_cutover.md`
 - `docs/setup/run_and_debug_guide.md`
 - `docs/setup/docker_and_compose_walkthrough.md`
 - `docs/setup/github_quality_gates_setup.md`
