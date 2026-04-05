@@ -9,7 +9,7 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 5. Serves a Streamlit dashboard over the gold dataset
 
 The migration path now supports DB-first load behavior, where PostgreSQL can be the primary load target and Parquet export is an explicit setting.
-City configuration and geocoding cache are also moving into PostgreSQL as runtime state.
+City configuration, geocoding cache, and raw extract persistence are also moving into PostgreSQL as runtime state.
 
 ## Main run guide
 

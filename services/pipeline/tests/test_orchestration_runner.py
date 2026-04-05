@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from pipeline.extract.cities import CitySpec
+from pipeline.extract.openweather_air_pollution import RawAirPollutionRecord
 from pipeline.load.storage import PublishResult
 from pipeline.orchestration import PipelineRunResult, run_pipeline_job
 import pipeline.orchestration as orchestration
@@ -26,10 +27,25 @@ def test_run_pipeline_job_is_importable_and_returns_result(
 
     def fake_fetch_air_pollution_history(**kwargs):
         captured["fetch_kwargs"] = kwargs
-        return tmp_path / "raw" / "x.json"
+        return RawAirPollutionRecord(
+            raw_response_id=1,
+            pipeline_run_id=1,
+            city_id=1,
+            city="Toronto",
+            country_code="CA",
+            lat=43.6535,
+            lon=-79.3839,
+            geo_id="Toronto,CA:43.6535,-79.3839",
+            request_start_utc=kwargs["start"],
+            request_end_utc=kwargs["end"],
+            status_code=200,
+            record_count=1,
+            payload_json={"list": []},
+            fetched_at=kwargs["end"],
+        )
 
-    def fake_build_gold_from_raw(*, raw_files: list[Path]) -> pd.DataFrame:
-        captured["raw_files"] = raw_files
+    def fake_build_gold_from_raw(*, raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
+        captured["raw_records"] = raw_records
         return pd.DataFrame([{"geo_id": "Toronto,CA", "ts": "2026-03-17T00:00:00Z"}])
 
     def fake_publish_outputs(**kwargs):
@@ -55,7 +71,8 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     assert result.gold_path == tmp_path / "gold" / "air_pollution_gold.parquet"
     assert result.postgres_table == "air_pollution_gold"
     assert captured["cities_path"] is None
-    assert captured["raw_files"] == [tmp_path / "raw" / "x.json"]
+    assert len(captured["raw_records"]) == 1
+    assert captured["raw_records"][0].city == "Toronto"
     assert isinstance(captured["publish_kwargs"]["gold_df"], pd.DataFrame)
     assert captured["publish_kwargs"]["gold_dir"] == tmp_path / "gold"
     assert captured["publish_kwargs"]["table_name"] == "air_pollution_gold"
