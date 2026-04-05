@@ -229,7 +229,7 @@ Columns:
 |---|---|---:|---|
 | `id` | bigint | no | surrogate primary key |
 | `pipeline_run_id` | bigint | no | foreign key to `pipeline_runs.id` |
-| `raw_response_id` | bigint | yes | optional lineage link to raw response row |
+| `raw_response_id` | bigint | yes | lineage link to raw response row; nullable only to keep future backfill options open |
 | `city_id` | bigint | no | foreign key to `cities.id` |
 | `ts` | timestamptz | no | observation timestamp in UTC |
 | `city` | text | no | denormalized for easy reads and parity with current output |
@@ -271,6 +271,8 @@ Notes:
 - The unique key on `(geo_id, ts)` matches the current dedupe behavior in pandas.
 - This table is the PostgreSQL replacement for `air_pollution_gold.parquet`.
 - Denormalized city fields are intentional for simple analytics and dashboard reads.
+- Gold writes should use PostgreSQL upserts on `(geo_id, ts)` instead of full-table replacement.
+- On conflict, the latest rerun should update measurement fields and lineage fields such as `pipeline_run_id` and `raw_response_id`, while preserving the original row identity.
 
 ## Relationship Summary
 
@@ -316,6 +318,8 @@ Reason:
 
 - one gold record per `(geo_id, ts)`
 - reruns should upsert rather than append duplicates
+- overlapping reruns should update the existing gold row instead of replacing the whole table
+- the latest successful load for the same `(geo_id, ts)` should win for derived values and lineage metadata
 
 ## Index Recommendations
 
@@ -339,12 +343,11 @@ These are logical index requirements for the MVP. Exact migration syntax belongs
 
 ## Open Questions
 
-These should be resolved before or during implementation, but they do not block the schema draft itself.
+These should be resolved before or during later phases, but they do not block the current MVP implementation.
 
 1. Should `geocoding_cache` keep history, or is one current row per city enough for the MVP?
 2. Should `raw_air_pollution_responses` store a payload checksum to detect provider changes for the same requested window?
-3. Should `air_pollution_gold` keep `raw_response_id` mandatory, or allow null during backfill/import scenarios?
-4. Should future retention rules archive old raw payloads, or is full retention acceptable for the MVP?
+3. Should future retention rules archive old raw payloads, or is full retention acceptable for the MVP?
 
 ## Recommended Follow-On Tickets
 
