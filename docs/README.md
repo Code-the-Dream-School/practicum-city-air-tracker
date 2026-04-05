@@ -7,6 +7,7 @@ The `docs/` folder is organized by purpose so contributors can find the right st
 Use these docs when you want to install, run, debug, or validate the project locally.
 
 - `setup/run_and_debug_guide.md`
+- `setup/postgresql_migrations_guide.md`
 - `setup/docker_and_compose_walkthrough.md`
 - `setup/github_quality_gates_setup.md`
 

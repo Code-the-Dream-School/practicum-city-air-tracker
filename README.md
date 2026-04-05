@@ -61,6 +61,24 @@ python -m pipeline.cli --source openweather --history-hours 72
 
 This is the preferred local run path because it matches the packaged production-style entrypoint used by the pipeline service.
 
+## PostgreSQL schema bootstrap
+
+The PostgreSQL-first migration path uses Alembic for schema versioning.
+
+Apply the latest schema locally with:
+
+```bash
+alembic upgrade head
+```
+
+If you are using Docker Compose, run the dedicated migration service:
+
+```bash
+docker compose run --rm migrate
+```
+
+This creates or upgrades the PostgreSQL schema before pipeline services depend on it.
+
 ## Configure cities
 
 The pipeline reads target cities from `CITIES_FILE`.
@@ -120,5 +138,6 @@ Browse `docs/README.md` for the full categorized index.
 - `docs/collaboration/what_is_a_data_pipeline.md`
 - `docs/architecture/architecture.md`
 - `docs/architecture/data_flow_diagram.md`
+- `docs/architecture/postgresql_schema_design.md`
 - `docs/reference/data_dictionary.md`
 - `docs/reference/openweather_environmental_api_fields_reference.md`

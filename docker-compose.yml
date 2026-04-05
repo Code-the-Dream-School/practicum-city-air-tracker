@@ -1,4 +1,14 @@
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: services/pipeline/Dockerfile
+    env_file: .env
+    depends_on:
+      - postgres
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
   pipeline:
     build:
       context: .
@@ -9,6 +19,7 @@ services:
       - ./configs:/app/configs:ro
     depends_on:
       - postgres
+      - migrate
     command: ["python", "-m", "pipeline.cli", "--source", "openweather", "--history-hours", "72"]
     restart: "no"
 

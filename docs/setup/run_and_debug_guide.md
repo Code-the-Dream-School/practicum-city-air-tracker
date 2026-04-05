@@ -14,6 +14,7 @@ These are the Python dependencies currently declared in `requirements.txt`:
 - `python-dotenv>=1.0`
 - `duckdb>=1.0`
 - `sqlalchemy>=2.0`
+- `alembic>=1.13`
 - `psycopg[binary]>=3.2`
 - `streamlit>=1.36`
 - `plotly>=5.22`
@@ -25,7 +26,8 @@ What they are used for on this branch:
 - `requests`: OpenWeather API calls
 - `pydantic`, `pydantic-settings`, `python-dotenv`: environment/config loading
 - `duckdb`: included as a dependency, not currently required by the main runtime path
-- `sqlalchemy`, `psycopg[binary]`: optional Postgres publishing
+- `sqlalchemy`, `psycopg[binary]`: PostgreSQL connectivity
+- `alembic`: PostgreSQL schema versioning and bootstrap
 - `streamlit`, `plotly`: dashboard
 - `pytest`: tests
 
