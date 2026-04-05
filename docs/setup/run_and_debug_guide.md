@@ -118,6 +118,7 @@ Create `.env` from `.env.example`, then make it match this:
 OPENWEATHER_API_KEY=YOUR_REAL_KEY
 HISTORY_HOURS=72
 MAX_CALLS_PER_MINUTE=50
+CITIES_SOURCE=postgres
 CITIES_FILE=configs/cities.csv
 
 # Local paths (non-Docker)
@@ -147,7 +148,8 @@ DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 
 ### Why these local values matter
 
-- `CITIES_FILE=configs/cities.csv` points the pipeline to the checked-in city list on your machine.
+- `CITIES_SOURCE=postgres` makes PostgreSQL the runtime source of truth for city selection.
+- `CITIES_FILE=configs/cities.csv` points the seed/import workflow to the checked-in city list on your machine.
 - `DATA_DIR`, `RAW_DIR`, and `GOLD_DIR` must use local paths, not `/app/...` container paths.
 - `DASHBOARD_DATA_PATH` must point to the Parquet file created by the local pipeline run.
 - `USE_POSTGRES=0` prevents the pipeline from trying to connect to a Postgres server you may not have running.
@@ -156,19 +158,25 @@ DASHBOARD_DATA_PATH=./data/gold/air_pollution_gold.parquet
 
 After your virtual environment is active and `.env` matches the values above:
 
-1. Run the pipeline:
+1. Seed cities into PostgreSQL:
+
+```bash
+python -m pipeline.cli --seed-cities
+```
+
+2. Run the pipeline:
 
 ```bash
 python services/pipeline/run_pipeline.py --source openweather --history-hours 72
 ```
 
-2. Start the dashboard:
+3. Start the dashboard:
 
 ```bash
 streamlit run services/dashboard/app/Home.py
 ```
 
-3. Open the dashboard:
+4. Open the dashboard:
 
 ```text
 http://localhost:8501

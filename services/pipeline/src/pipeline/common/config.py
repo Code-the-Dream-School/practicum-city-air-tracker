@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     openweather_api_key: str = "7842b53c6510964cf8c2ee80d5feaab2"
     history_hours: int = 72
     max_calls_per_minute: int = 50
+    cities_source: str = "postgres"
     cities_file: str = "/app/configs/cities.csv"
 
     # Data paths
