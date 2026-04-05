@@ -44,7 +44,8 @@ def build_runtime_window(history_hours: int) -> tuple[datetime, datetime]:
 
 
 def run_extract_stage(raw_dir: Path, start: datetime, end: datetime, run_id: str) -> list[Path]:
-    cities = read_cities(Path(settings.cities_file))
+    cities_path = Path(settings.cities_file) if settings.cities_source == "file" else None
+    cities = read_cities(cities_path)
     raw_files: list[Path] = []
 
     for city in cities:

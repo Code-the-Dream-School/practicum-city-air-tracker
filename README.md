@@ -83,7 +83,9 @@ This creates or upgrades the PostgreSQL schema before pipeline services depend o
 
 ## Configure cities
 
-The pipeline reads target cities from `CITIES_FILE`.
+The pipeline now treats PostgreSQL as the runtime source of truth for cities by default.
+
+`CITIES_FILE` remains the seed/import input used to populate the `cities` table.
 
 Expected CSV columns:
 
@@ -107,7 +109,7 @@ Notes:
 
 ### Custom city files
 
-You can point the pipeline to a different city CSV by changing `CITIES_FILE`.
+You can point the seed/import workflow to a different city CSV by changing `CITIES_FILE`.
 
 Examples:
 
@@ -123,10 +125,20 @@ For Docker Compose, custom city files must live inside `./configs/` on the host 
 
 ### Common city-file issues
 
-- `FileNotFoundError` on startup usually means `CITIES_FILE` is misspelled or points to the wrong place
+- `FileNotFoundError` during city seed/import usually means `CITIES_FILE` is misspelled or points to the wrong place
 - If Docker cannot find a custom city file, make sure the file exists under `./configs/`
-- If the pipeline produces no output, confirm the CSV has at least one data row below the header
+- If city seed/import creates no rows, confirm the CSV has at least one data row below the header
 - If geocoding fails for a city, verify the `country_code`
+
+### Seed cities into PostgreSQL
+
+To populate the `cities` table from the configured CSV:
+
+```bash
+python -m pipeline.cli --seed-cities
+```
+
+Normal pipeline execution reads active cities from PostgreSQL when `CITIES_SOURCE=postgres`.
 
 ## Additional docs
 

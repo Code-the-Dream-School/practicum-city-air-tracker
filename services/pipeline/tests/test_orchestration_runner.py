@@ -14,12 +14,13 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(orchestration.settings, "cities_file", str(tmp_path / "cities.csv"))
+    monkeypatch.setattr(orchestration.settings, "cities_source", "postgres")
     monkeypatch.setattr(orchestration.settings, "raw_dir", str(tmp_path / "raw"))
     monkeypatch.setattr(orchestration.settings, "gold_dir", str(tmp_path / "gold"))
 
     captured: dict[str, object] = {}
 
-    def fake_read_cities(path: Path) -> list[CitySpec]:
+    def fake_read_cities(path: Path | None) -> list[CitySpec]:
         captured["cities_path"] = path
         return [CitySpec(city="Toronto", country_code="CA", state="ON")]
 
@@ -53,7 +54,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     assert result.rows == 1
     assert result.gold_path == tmp_path / "gold" / "air_pollution_gold.parquet"
     assert result.postgres_table == "air_pollution_gold"
-    assert captured["cities_path"] == tmp_path / "cities.csv"
+    assert captured["cities_path"] is None
     assert captured["raw_files"] == [tmp_path / "raw" / "x.json"]
     assert isinstance(captured["publish_kwargs"]["gold_df"], pd.DataFrame)
     assert captured["publish_kwargs"]["gold_dir"] == tmp_path / "gold"
@@ -66,6 +67,7 @@ def test_run_pipeline_job_fails_fast_when_cities_file_missing(
     missing_path = tmp_path / "missing-cities.csv"
 
     monkeypatch.setattr(orchestration.settings, "cities_file", str(missing_path))
+    monkeypatch.setattr(orchestration.settings, "cities_source", "file")
     monkeypatch.setattr(orchestration.settings, "raw_dir", str(tmp_path / "raw"))
     monkeypatch.setattr(orchestration.settings, "gold_dir", str(tmp_path / "gold"))
 
