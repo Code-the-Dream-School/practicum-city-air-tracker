@@ -1,5 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Optional
 
 import pandas as pd
 import pytest
@@ -22,7 +23,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     captured: dict[str, object] = {}
     status_updates: list[object] = []
 
-    def fake_read_cities(path: Path | None) -> list[CitySpec]:
+    def fake_read_cities(path: Optional[Path]) -> list[CitySpec]:
         captured["cities_path"] = path
         return [CitySpec(city="Toronto", country_code="CA", state="ON")]
 
