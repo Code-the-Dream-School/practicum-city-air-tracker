@@ -35,6 +35,7 @@ def test_publish_outputs_supports_postgres_only(
 ):
     monkeypatch.setattr(storage.settings, "use_postgres", True)
     monkeypatch.setattr(storage.settings, "write_gold_parquet", False)
+    monkeypatch.setattr(storage.settings, "write_gold_azure_blob", False)
 
     captured: dict[str, object] = {}
 
@@ -69,7 +70,89 @@ def test_publish_outputs_supports_postgres_only(
     }
     assert result.table_name == "air_pollution_gold"
     assert result.gold_path is None
+    assert result.azure_blob_path is None
     assert result.rows == 1
+
+
+def test_publish_outputs_supports_azure_blob_only(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.setattr(storage.settings, "use_postgres", False)
+    monkeypatch.setattr(storage.settings, "write_gold_parquet", False)
+    monkeypatch.setattr(storage.settings, "write_gold_azure_blob", True)
+    monkeypatch.setattr(storage.settings, "azure_blob_container", "gold")
+    monkeypatch.setattr(storage.settings, "azure_blob_path", "exports/{table_name}.parquet")
+    monkeypatch.setattr(
+        storage.settings,
+        "azure_storage_connection_string",
+        "UseDevelopmentStorage=true",
+    )
+
+    captured: dict[str, object] = {}
+
+    class DummyContainerClient:
+        def create_container(self):
+            captured["container_created"] = True
+
+    class DummyBlobClient:
+        def upload_blob(self, payload, overwrite):
+            captured["upload"] = {"size": len(payload), "overwrite": overwrite}
+
+    class DummyBlobServiceClient:
+        @classmethod
+        def from_connection_string(cls, connection_string):
+            captured["connection_string"] = connection_string
+            return cls()
+
+        def get_container_client(self, container_name):
+            captured["container_name"] = container_name
+            return DummyContainerClient()
+
+        def get_blob_client(self, *, container, blob):
+            captured["blob_target"] = {"container": container, "blob": blob}
+            return DummyBlobClient()
+
+    monkeypatch.setattr(
+        storage,
+        "_import_azure_blob_clients",
+        lambda: (DummyBlobServiceClient, type("DummyExists", (Exception,), {})),
+    )
+
+    result = storage.publish_outputs(
+        gold_df=build_gold_df(),
+        gold_dir=tmp_path,
+        table_name="air_pollution_gold",
+    )
+
+    assert captured["connection_string"] == "UseDevelopmentStorage=true"
+    assert captured["container_name"] == "gold"
+    assert captured["blob_target"] == {
+        "container": "gold",
+        "blob": "exports/air_pollution_gold.parquet",
+    }
+    assert captured["upload"]["overwrite"] is True
+    assert captured["upload"]["size"] > 0
+    assert result.table_name is None
+    assert result.gold_path is None
+    assert result.azure_blob_path == "exports/air_pollution_gold.parquet"
+    assert result.rows == 1
+
+
+def test_publish_outputs_requires_connection_string_for_azure_blob(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.setattr(storage.settings, "use_postgres", False)
+    monkeypatch.setattr(storage.settings, "write_gold_parquet", False)
+    monkeypatch.setattr(storage.settings, "write_gold_azure_blob", True)
+    monkeypatch.setattr(storage.settings, "azure_storage_connection_string", "")
+    monkeypatch.setattr(storage.settings, "azure_blob_container", "gold")
+
+    with pytest.raises(ValueError, match=r"AZURE_STORAGE_CONNECTION_STRING"):
+        storage.publish_outputs(
+            gold_df=build_gold_df(),
+            gold_dir=tmp_path,
+            table_name="air_pollution_gold",
+        )
 
 
 def test_prepare_gold_rows_requires_lineage_columns():
@@ -109,6 +192,7 @@ def test_publish_outputs_requires_at_least_one_target(
 ):
     monkeypatch.setattr(storage.settings, "use_postgres", False)
     monkeypatch.setattr(storage.settings, "write_gold_parquet", False)
+    monkeypatch.setattr(storage.settings, "write_gold_azure_blob", False)
 
     with pytest.raises(ValueError, match=r"At least one load target must be enabled"):
         storage.publish_outputs(

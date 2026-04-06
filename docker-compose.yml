@@ -5,7 +5,8 @@ services:
       dockerfile: services/pipeline/Dockerfile
     env_file: .env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     command: ["alembic", "upgrade", "head"]
     restart: "no"
 
@@ -18,8 +19,12 @@ services:
       - ./data:/app/data
       - ./configs:/app/configs:ro
     depends_on:
-      - postgres
-      - migrate
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      azurite:
+        condition: service_started
     command: ["python", "-m", "pipeline.cli", "--source", "openweather", "--history-hours", "72"]
     restart: "no"
 
@@ -40,7 +45,8 @@ services:
     ports:
       - "8501:8501"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:16
@@ -52,13 +58,50 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cityair -d cityair"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
 
   adminer:
     image: adminer:4
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command:
+      [
+        "azurite-blob",
+        "--blobHost",
+        "0.0.0.0",
+        "--blobPort",
+        "10000",
+        "--location",
+        "/data",
+        "--skipApiVersionCheck",
+      ]
+    ports:
+      - "10000:10000"
+    volumes:
+      - azurite_data:/data
+
+  azurestorageexplorer:
+    image: sebagomez/azurestorageexplorer:3.1.0
+    ports:
+      - "8081:8080"
+    environment:
+      AZURITE: "true"
+      AZURE_STORAGE_CONNECTIONSTRING: ${AZURE_STORAGE_CONNECTION_STRING}
+    depends_on:
+      azurite:
+        condition: service_started
 
 volumes:
   postgres_data:
+  azurite_data:

@@ -74,6 +74,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     assert result.history_hours == 72
     assert result.rows == 1
     assert result.gold_path is None
+    assert result.azure_blob_path is None
     assert result.postgres_table == "air_pollution_gold"
     assert captured["cities_path"] is None
     assert len(captured["raw_records"]) == 1

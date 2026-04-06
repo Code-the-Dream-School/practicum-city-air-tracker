@@ -25,6 +25,7 @@ What they are used for on this branch:
 - `pandas`, `pyarrow`: CSV and Parquet data handling
 - `requests`: OpenWeather API calls
 - `pydantic`, `pydantic-settings`, `python-dotenv`: environment/config loading
+- `azure-storage-blob`: optional Azure Blob upload for the gold Parquet artifact
 - `duckdb`: included as a dependency, not currently required by the main runtime path
 - `sqlalchemy`, `psycopg[binary]`: PostgreSQL connectivity
 - `alembic`: PostgreSQL schema versioning and bootstrap
@@ -129,22 +130,18 @@ DATA_DIR=./data
 RAW_DIR=./data/raw
 GOLD_DIR=./data/gold
 
-# Optional cloud storage settings left unused in local Parquet flow
-GOLD_STORAGE_BACKEND=local
-AZURE_BLOB_CONTAINER=
-AZURE_GOLD_PREFIX=
-AZURE_STORAGE_CONNECTION_STRING=
-AZURE_STORAGE_ACCOUNT_NAME=
-AZURE_STORAGE_ACCOUNT_KEY=
-
 # PostgreSQL is the primary gold target
 USE_POSTGRES=1
 WRITE_GOLD_PARQUET=0
+WRITE_GOLD_AZURE_BLOB=0
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=cityair
 POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
+AZURE_STORAGE_CONNECTION_STRING=
+AZURE_BLOB_CONTAINER=gold
+AZURE_BLOB_PATH=exports/{table_name}.parquet
 
 ```
 
@@ -155,6 +152,7 @@ POSTGRES_PASSWORD=cityair
 - `DATA_DIR`, `RAW_DIR`, and `GOLD_DIR` must use local paths, not `/app/...` container paths.
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target during local runs.
 - `WRITE_GOLD_PARQUET=0` keeps Parquet export disabled unless you explicitly want a secondary file artifact.
+- `WRITE_GOLD_AZURE_BLOB=0` keeps Azure Blob publishing disabled unless you explicitly want to test the Blob upload path.
 
 ### Exact commands to run locally without Docker
 
@@ -191,6 +189,7 @@ These are the expected results:
 - PostgreSQL stores raw OpenWeather air-pollution responses and extract metadata for the DB-first migration path
 - PostgreSQL stores the gold dataset in `air_pollution_gold`
 - `data/gold/air_pollution_gold.parquet` exists only if `WRITE_GOLD_PARQUET=1`
+- Azure Blob publishing only runs if `WRITE_GOLD_AZURE_BLOB=1`
 - the dashboard server starts successfully on port `8501`
 - the dashboard shows row and city metrics
 
@@ -343,11 +342,13 @@ For this repository, Docker Compose starts these services:
 - `dashboard`: React frontend served by the Python dashboard server on port `8501`
 - `postgres`: PostgreSQL on port `5432`
 - `adminer`: Adminer UI on port `8080`
+- `azurite`: local Azure Blob emulator on port `10000`
+- `azurestorageexplorer`: browser-based Azure Storage explorer on port `8081`
 
 Important behavior:
 
 - The `pipeline` container is expected to finish and exit after it completes successfully.
-- The `dashboard`, `postgres`, and `adminer` containers should stay running.
+- The `dashboard`, `postgres`, `adminer`, `azurite`, and `azurestorageexplorer` containers should stay running.
 
 ### How to install Docker Compose on Windows and macOS
 
@@ -474,6 +475,13 @@ If you prefer detached mode:
 docker compose up --build -d
 ```
 
+If you want a completely fresh local state for PostgreSQL and Azurite, use:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
 #### Step 7: Check whether the application is running properly
 
 Run:
@@ -487,6 +495,9 @@ Expected result on a healthy run:
 - `dashboard` is `Up`
 - `postgres` is `Up`
 - `adminer` is `Up`
+- `azurite` is `Up`
+- `azurestorageexplorer` is `Up`
+- `migrate` should show `Exited (0)` after applying the schema
 - `pipeline` may show `Exited (0)` after finishing, and that is expected
 
 Check container logs:
@@ -501,8 +512,64 @@ Healthy signs:
 - The pipeline logs end without a traceback
 - The pipeline logs include completion output
 - The dashboard logs show the dashboard server started successfully
+- The Azurite logs show Blob API requests if Blob publishing is enabled
 
-#### Step 8: Verify outputs
+#### Step 8: Verify Azurite Blob publishing
+
+Use this sequence when `WRITE_GOLD_AZURE_BLOB=1`.
+
+1. Confirm the pipeline completed successfully:
+
+```bash
+docker compose logs pipeline
+```
+
+2. Confirm Azurite received the Blob upload:
+
+```bash
+docker compose logs azurite --tail=200
+```
+
+Healthy signs include log lines like:
+
+```text
+PUT /devstoreaccount1/gold?restype=container ... 201
+PUT /devstoreaccount1/gold/exports/air_pollution_gold.parquet ... 201
+```
+
+3. Open the browser explorer:
+
+```text
+http://localhost:8081
+```
+
+The explorer is preconfigured for Azurite through Docker Compose and should open already authenticated.
+
+4. Browse to the uploaded artifact:
+
+- container: `gold`
+- path inside container: `exports/`
+- blob name: `air_pollution_gold.parquet`
+
+The full blob path is:
+
+```text
+gold / exports/air_pollution_gold.parquet
+```
+
+Important:
+
+- `gold` is the container name
+- the path inside that container is `exports/`
+- do not use `gold/exports/` as the path inside the explorer
+
+5. Optional verification:
+
+- download the blob from the explorer UI
+- confirm the file is non-empty
+- compare its size or contents with any local Parquet export if `WRITE_GOLD_PARQUET=1`
+
+#### Step 9: Verify outputs
 
 After the pipeline finishes, these checks should pass:
 
@@ -510,6 +577,7 @@ After the pipeline finishes, these checks should pass:
 2. The raw cache exists under `data/raw`.
 3. The dashboard opens at <http://localhost:8501>.
 4. Adminer opens at <http://localhost:8080>.
+5. Azure Storage Explorer opens at <http://localhost:8081>.
 
 Optional checks:
 
@@ -521,8 +589,10 @@ Notes:
 
 - On this branch, Postgres is part of the normal runtime path and should stay enabled.
 - Parquet export remains optional and only runs when `WRITE_GOLD_PARQUET=1`.
+- Azure Blob publishing remains optional and only runs when `WRITE_GOLD_AZURE_BLOB=1`.
+- The checked-in `.env.example` uses an Azurite connection string so Blob uploads can be tested locally through Docker Compose.
 
-#### Step 9: Stop the application
+#### Step 10: Stop the application
 
 ```bash
 docker compose down
@@ -575,9 +645,24 @@ This stack uses:
 
 - `8501` for the dashboard
 - `8080` for Adminer
+- `8081` for the browser-based Azure Storage explorer
+- `10000` for Azurite Blob storage
 - `5432` for Postgres
 
 If one of those ports is already in use, stop the other app or change the port mapping in `docker-compose.yml`.
+
+#### The browser explorer shows `0 objects` but Azurite logs show `201`
+
+This usually means the explorer is browsing the wrong path prefix.
+
+Use:
+
+- container: `gold`
+- path: `exports/`
+
+Do not use:
+
+- `gold/exports/`
 
 ## 6. Source references used for this guide
 

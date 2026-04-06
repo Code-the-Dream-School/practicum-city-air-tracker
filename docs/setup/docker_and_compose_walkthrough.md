@@ -10,6 +10,8 @@ The files covered here are:
 - `services/dashboard/Dockerfile`
 - `docker-compose.yml`
 
+This walkthrough also explains how the local Azure Blob emulator and browser-based storage explorer fit into the stack.
+
 ## `services/pipeline/Dockerfile`
 
 Current file:
@@ -214,12 +216,18 @@ volumes:
 - `services:`
   Starts the list of containers that Docker Compose should manage together.
 
-In this project, there are four services:
+In this project, there are seven services:
 
 - `pipeline`
 - `dashboard`
 - `postgres`
 - `adminer`
+- `azurite`
+- `azurestorageexplorer`
+- `migrate`
+
+`azurite` is a local Azure Storage emulator. It allows the pipeline to test Azure Blob uploads without requiring a real Azure account.
+`azurestorageexplorer` is a browser-based UI that connects to Azurite so you can verify uploaded blobs from a web page.
 
 ### `pipeline` service
 
@@ -256,8 +264,14 @@ In this project, there are four services:
 - `- postgres`
   Indicates the pipeline depends on Postgres being started first.
 
-- `command: ["python", "run_pipeline.py", "--source", "openweather", "--history-hours", "72"]`
-  Overrides or restates the default command and runs the pipeline.
+- `- migrate`
+  Ensures schema migrations are run before the batch job starts.
+
+- `- azurite`
+  Makes the local Blob emulator available when Azure Blob publishing is enabled.
+
+- `command: ["python", "-m", "pipeline.cli", "--source", "openweather", "--history-hours", "72"]`
+  Runs the packaged pipeline module instead of the older script-style entrypoint.
 
 - `restart: "no"`
   Tells Docker not to restart this service automatically.
@@ -360,6 +374,69 @@ In this project, there are four services:
 - `- postgres`
   Indicates the dependency.
 
+### `azurite` service
+
+- `azurite:`
+  Names the Azure Storage emulator service.
+
+- `image: mcr.microsoft.com/azure-storage/azurite`
+  Pulls the official Azurite image.
+
+- `command: ["azurite-blob", "--blobHost", "0.0.0.0", "--blobPort", "10000", "--location", "/data"]`
+  Starts the Blob emulator endpoint and stores emulator data under `/data`.
+
+- `ports:`
+  Publishes the Blob emulator to the host.
+
+- `- "10000:10000"`
+  Makes the Blob endpoint reachable on `http://localhost:10000`.
+
+- `volumes:`
+  Persists emulator state across restarts.
+
+- `- azurite_data:/data`
+  Stores Blob emulator data in a named Docker volume.
+
+### `azurestorageexplorer` service
+
+- `azurestorageexplorer:`
+  Names the browser-based Azure Storage explorer service.
+
+- `image: sebagomez/azurestorageexplorer:3.1.0`
+  Pulls a third-party web UI for browsing Azure Storage-compatible services.
+
+- `ports:`
+  Publishes the explorer UI on the host.
+
+- `- "8081:8080"`
+  Makes the explorer available at `http://localhost:8081`.
+
+- `environment:`
+  Preconfigures the explorer for the local Azurite setup.
+
+- `AZURITE: "true"`
+  Tells the explorer it is connecting to Azurite rather than a standard Azure public endpoint.
+
+- `AZURE_STORAGE_CONNECTIONSTRING: ${AZURE_STORAGE_CONNECTION_STRING}`
+  Reuses the same connection string that the pipeline uses for Blob uploads.
+
+- `depends_on:`
+  Starts the explorer after Azurite has started.
+
+- `azurite:`
+  Declares the dependency on the Blob emulator.
+
+### `migrate` service
+
+- `migrate:`
+  Names the one-time schema migration service.
+
+- `command: ["alembic", "upgrade", "head"]`
+  Applies the latest PostgreSQL schema before the pipeline starts.
+
+- `restart: "no"`
+  Runs once and exits after migrations complete.
+
 ### Named volumes
 
 - `volumes:`
@@ -367,6 +444,9 @@ In this project, there are four services:
 
 - `postgres_data:`
   Declares a named Docker volume used by the Postgres service.
+
+- `azurite_data:`
+  Declares a named Docker volume used by the Azurite service.
 
 ## Practical summary
 
@@ -380,13 +460,57 @@ Docker Compose does the following:
 
 1. builds the pipeline and dashboard images
 2. starts Postgres
-3. starts the pipeline job
-4. starts the React dashboard server
-5. starts Adminer
+3. waits until Postgres passes its healthcheck
+4. starts Azurite for local Blob uploads
+5. runs schema migration
+6. starts the pipeline job only after migration succeeds
+7. starts the React dashboard server
+8. starts Adminer
+9. starts the browser-based Azure Storage explorer
 
 The important idea is that:
 
 - the pipeline writes data into `./data`
+- the pipeline can also upload the gold Parquet artifact into Azurite when Azure Blob publishing is enabled
 - the dashboard primarily reads PostgreSQL through its backend API
 - `./data` remains useful for optional compatibility exports
 - Adminer helps you inspect Postgres visually
+- the browser explorer lets you verify the Blob artifact under container `gold` and path `exports/`
+
+## Azurite verification flow
+
+Use this sequence to verify the local Azure Blob path after running `docker compose up --build`:
+
+1. Confirm the pipeline completed successfully:
+
+```bash
+docker compose logs pipeline
+```
+
+2. Confirm Azurite accepted the upload:
+
+```bash
+docker compose logs azurite --tail=200
+```
+
+Healthy log lines include:
+
+```text
+PUT /devstoreaccount1/gold?restype=container ... 201
+PUT /devstoreaccount1/gold/exports/air_pollution_gold.parquet ... 201
+```
+
+3. Open the browser explorer:
+
+```text
+http://localhost:8081
+```
+
+4. Browse to:
+
+- container: `gold`
+- path: `exports/`
+- blob: `air_pollution_gold.parquet`
+
+5. If the explorer shows `0 objects`, clear the path and retry with `exports/`.
+Do not use `gold/exports/` inside the selected `gold` container.

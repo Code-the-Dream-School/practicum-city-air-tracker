@@ -5,10 +5,11 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 1. Geocodes global cities to lat/lon
 2. Pulls OpenWeather Air Pollution historical data
 3. Transforms PostgreSQL-backed raw response records into a gold dataset
-4. Writes the gold dataset to PostgreSQL and can optionally export Parquet
+4. Writes the gold dataset to PostgreSQL and can optionally export Parquet locally or publish the same Parquet artifact to Azure Blob Storage
 5. Serves a React dashboard backed by a Python API over PostgreSQL data
 
 The pipeline now uses DB-first gold persistence by default, with PostgreSQL as the primary gold-data target and Parquet export as an explicit optional setting.
+Azure Blob publishing is also optional and can be tested locally through Azurite in Docker Compose.
 City configuration, geocoding cache, and raw extract persistence are also moving into PostgreSQL as runtime state.
 
 ## Main run guide
@@ -84,6 +85,14 @@ Quick sequence:
 2. `python -m pipeline.cli --seed-cities`
 3. `python -m pipeline.cli --source openweather --history-hours 72`
 4. verify `pipeline_runs` and `air_pollution_gold` in PostgreSQL
+
+Optional Blob flow for local testing:
+
+1. set `WRITE_GOLD_AZURE_BLOB=1`
+2. keep the Azurite connection string from `.env.example`
+3. run `docker compose up --build`
+4. open the browser explorer at `http://localhost:8081`
+5. confirm the blob exists under container `gold` at `exports/air_pollution_gold.parquet`
 
 ## PostgreSQL schema bootstrap
 

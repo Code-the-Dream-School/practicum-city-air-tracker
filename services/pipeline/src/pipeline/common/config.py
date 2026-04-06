@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # OpenWeather
-    openweather_api_key: str = "7842b53c6510964cf8c2ee80d5feaab2"
+    openweather_api_key: str = "CHANGEME"
     history_hours: int = 72
     max_calls_per_minute: int = 50
     cities_source: str = "postgres"
@@ -17,11 +17,15 @@ class Settings(BaseSettings):
     # PostgreSQL is the primary gold target; Parquet is optional.
     use_postgres: bool = True
     write_gold_parquet: bool = False
+    write_gold_azure_blob: bool = False
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "cityair"
     postgres_user: str = "cityair"
     postgres_password: str = "cityair"
+    azure_storage_connection_string: str = ""
+    azure_blob_container: str = "gold"
+    azure_blob_path: str = "exports/{table_name}.parquet"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
