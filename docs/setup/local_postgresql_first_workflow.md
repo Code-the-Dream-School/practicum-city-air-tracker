@@ -38,11 +38,15 @@ GOLD_DIR=./data/gold
 
 USE_POSTGRES=1
 WRITE_GOLD_PARQUET=0
+WRITE_GOLD_AZURE_BLOB=0
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=cityair
 POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
+AZURE_STORAGE_CONNECTION_STRING=
+AZURE_BLOB_CONTAINER=gold
+AZURE_BLOB_PATH=exports/{table_name}.parquet
 
 ```
 
@@ -50,6 +54,7 @@ Notes:
 
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target.
 - `WRITE_GOLD_PARQUET=0` disables Parquet unless you explicitly want a secondary export for debugging or compatibility.
+- `WRITE_GOLD_AZURE_BLOB=0` keeps Azure Blob publishing disabled during normal local DB-first work unless you are explicitly testing the Blob path.
 - `CITIES_SOURCE=postgres` means normal pipeline runs read cities from the database.
 - `CITIES_FILE` is still used for the seed/import step.
 
@@ -123,6 +128,7 @@ Optional checks:
 
 - inspect `geocoding_cache` to confirm cached coordinates were stored
 - enable `WRITE_GOLD_PARQUET=1` only if you intentionally want a secondary Parquet export
+- enable `WRITE_GOLD_AZURE_BLOB=1` only if you intentionally want to test Blob publishing
 
 ## 6. Run DB-native tests
 
@@ -149,6 +155,7 @@ For local debugging:
 - use local paths such as `./data/raw` and `./data/gold`
 - keep `USE_POSTGRES=1`
 - leave `WRITE_GOLD_PARQUET=0` unless you need a file artifact for dashboard debugging
+- leave `WRITE_GOLD_AZURE_BLOB=0` unless you are testing the Azurite or Azure upload path
 
 The current dashboard still reads Parquet, so dashboard debugging is a temporary exception to the DB-first runtime path.
 The React dashboard runs from `services/dashboard/server.py` and reads PostgreSQL-backed data through `/api/dashboard`.

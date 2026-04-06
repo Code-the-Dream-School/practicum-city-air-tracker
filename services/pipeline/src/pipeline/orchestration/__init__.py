@@ -27,6 +27,7 @@ class PipelineRunResult:
     history_hours: int
     raw_records: list[RawAirPollutionRecord]
     gold_path: Path | None
+    azure_blob_path: str | None
     postgres_table: str | None
     rows: int
 
@@ -133,6 +134,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             history_hours=resolved_history_hours,
             raw_records=raw_records,
             gold_path=publish_result.gold_path,
+            azure_blob_path=publish_result.azure_blob_path,
             postgres_table=publish_result.table_name,
             rows=len(gold_df),
         )
@@ -142,6 +144,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             extra={
                 "pipeline_run_id": result.pipeline_run_id,
                 "gold_path": str(result.gold_path) if result.gold_path is not None else None,
+                "azure_blob_path": result.azure_blob_path,
                 "postgres_table": result.postgres_table,
                 "rows": result.rows,
             },

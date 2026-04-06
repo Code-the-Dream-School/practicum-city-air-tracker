@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from io import BytesIO
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,9 +14,10 @@ from ..common.config import settings
 
 @dataclass(frozen=True)
 class PublishResult:
-    table_name: str | None
-    gold_path: Path | None
-    rows: int
+    table_name: str | None = None
+    gold_path: Path | None = None
+    azure_blob_path: str | None = None
+    rows: int = 0
 
 
 GOLD_UPSERT_REQUIRED_COLUMNS = {
@@ -34,6 +36,60 @@ GOLD_UPSERT_REQUIRED_COLUMNS = {
 
 def _build_postgres_engine():
     return create_engine(settings.postgres_sqlalchemy_url)
+
+
+def _import_azure_blob_clients():
+    try:
+        from azure.core.exceptions import ResourceExistsError
+        from azure.storage.blob import BlobServiceClient
+    except ImportError as exc:
+        raise ImportError(
+            "Azure Blob publishing requires azure-storage-blob. Install dependencies from requirements.txt."
+        ) from exc
+
+    return BlobServiceClient, ResourceExistsError
+
+
+def _build_blob_service_client():
+    connection_string = settings.azure_storage_connection_string.strip()
+    if not connection_string:
+        raise ValueError(
+            "WRITE_GOLD_AZURE_BLOB=1 requires AZURE_STORAGE_CONNECTION_STRING to be set"
+        )
+
+    BlobServiceClient, _ = _import_azure_blob_clients()
+    return BlobServiceClient.from_connection_string(connection_string)
+
+
+def _resolve_azure_blob_path(table_name: str) -> str:
+    blob_path = settings.azure_blob_path.strip()
+    if not blob_path:
+        blob_path = f"{table_name}.parquet"
+    return blob_path.format(table_name=table_name)
+
+
+def _upload_gold_to_azure_blob(gold_df: pd.DataFrame, table_name: str) -> str:
+    container_name = settings.azure_blob_container.strip()
+    if not container_name:
+        raise ValueError("WRITE_GOLD_AZURE_BLOB=1 requires AZURE_BLOB_CONTAINER to be set")
+
+    blob_path = _resolve_azure_blob_path(table_name)
+    service_client = _build_blob_service_client()
+    _, ResourceExistsError = _import_azure_blob_clients()
+
+    container_client = service_client.get_container_client(container_name)
+    try:
+        container_client.create_container()
+    except ResourceExistsError:
+        pass
+
+    parquet_bytes = BytesIO()
+    gold_df.to_parquet(parquet_bytes, index=False)
+    parquet_bytes.seek(0)
+
+    blob_client = service_client.get_blob_client(container=container_name, blob=blob_path)
+    blob_client.upload_blob(parquet_bytes.getvalue(), overwrite=True)
+    return blob_path
 
 
 def _build_gold_table(table_name: str) -> sa.Table:
@@ -127,6 +183,7 @@ def _upsert_gold_rows(engine, gold_df: pd.DataFrame, table_name: str) -> None:
 def publish_outputs(gold_df: pd.DataFrame, gold_dir: Path, table_name: str) -> PublishResult:
     postgres_table: str | None = None
     gold_path: Path | None = None
+    azure_blob_path: str | None = None
 
     if settings.use_postgres:
         engine = _build_postgres_engine()
@@ -137,7 +194,17 @@ def publish_outputs(gold_df: pd.DataFrame, gold_dir: Path, table_name: str) -> P
         gold_path = gold_dir / f"{table_name}.parquet"
         gold_df.to_parquet(gold_path, index=False)
 
-    if postgres_table is None and gold_path is None:
-        raise ValueError("At least one load target must be enabled: USE_POSTGRES=1 or WRITE_GOLD_PARQUET=1")
+    if settings.write_gold_azure_blob:
+        azure_blob_path = _upload_gold_to_azure_blob(gold_df=gold_df, table_name=table_name)
 
-    return PublishResult(table_name=postgres_table, gold_path=gold_path, rows=len(gold_df))
+    if postgres_table is None and gold_path is None and azure_blob_path is None:
+        raise ValueError(
+            "At least one load target must be enabled: USE_POSTGRES=1, WRITE_GOLD_PARQUET=1, or WRITE_GOLD_AZURE_BLOB=1"
+        )
+
+    return PublishResult(
+        table_name=postgres_table,
+        gold_path=gold_path,
+        azure_blob_path=azure_blob_path,
+        rows=len(gold_df),
+    )
