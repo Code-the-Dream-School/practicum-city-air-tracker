@@ -14,30 +14,44 @@ rectangle "OpenWeather APIs" {
 }
 
 rectangle "Extract" {
+  [cities.py] as CITIESMOD
   [geocoding.py] as GEO
   [openweather_air_pollution.py] as EX
 }
 
-database "Raw Cache\n(data/raw/openweather)" as RAW
+database "PostgreSQL\ncities" as CITYDB
+database "PostgreSQL\ngeocoding_cache" as GEOCACHE
+database "PostgreSQL\nraw_air_pollution_responses" as RAW
 
 rectangle "Transform" {
   [openweather_air_pollution_transform.py] as TR
 }
 
-database "Gold\n(air_pollution_gold)" as GOLD
+rectangle "Load" {
+  [storage.py] as LOAD
+}
+
+database "PostgreSQL\nair_pollution_gold" as GOLD
+file "Local Parquet\n(optional)" as PARQUET
+cloud "Azure Blob / Azurite\n(optional)" as BLOB
 rectangle "Serve" {
   [React Dashboard + Python API] as DASH
 }
 
-CITIES --> GEO
+CITIES --> CITIESMOD
+CITIESMOD --> CITYDB
+CITYDB --> GEO
 GEO --> GEOAPI
-GEO --> RAW
+GEO --> GEOCACHE
 
 EX --> AIRAPI
 EX --> RAW
 
 RAW --> TR
-TR --> GOLD
+TR --> LOAD
+LOAD --> GOLD
+LOAD --> PARQUET
+LOAD --> BLOB
 
 GOLD --> DASH
 @enduml

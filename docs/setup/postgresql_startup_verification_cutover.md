@@ -47,7 +47,7 @@ Use this when PostgreSQL or the app services are running through Docker Compose:
 docker compose up -d postgres
 docker compose run --rm migrate
 docker compose run --rm pipeline python -m pipeline.cli --seed-cities
-docker compose run --rm pipeline python run_pipeline.py --source openweather --history-hours 72
+docker compose run --rm pipeline python -m pipeline.cli --source openweather --history-hours 72
 ```
 
 Notes:

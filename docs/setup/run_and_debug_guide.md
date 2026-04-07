@@ -167,7 +167,7 @@ python -m pipeline.cli --seed-cities
 2. Run the pipeline:
 
 ```bash
-python services/pipeline/run_pipeline.py --source openweather --history-hours 72
+python -m pipeline.cli --source openweather --history-hours 72
 ```
 
 3. Start the dashboard:
@@ -255,7 +255,7 @@ Create `.vscode/launch.json` with content like this:
       "name": "Pipeline: run current branch",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/services/pipeline/run_pipeline.py",
+      "module": "pipeline.cli",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "args": ["--source", "openweather", "--history-hours", "72"],
@@ -303,7 +303,7 @@ Create `.vscode/launch.json` with content like this:
 3. Open Run and Debug.
 4. Choose `Pipeline: run current branch`.
 5. Set breakpoints in files such as:
-   - `services/pipeline/run_pipeline.py`
+   - `services/pipeline/src/pipeline/cli.py`
    - `services/pipeline/src/pipeline/extract/geocoding.py`
    - `services/pipeline/src/pipeline/extract/openweather_air_pollution.py`
    - `services/pipeline/src/pipeline/transform/openweather_air_pollution_transform.py`
