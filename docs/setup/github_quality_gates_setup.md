@@ -68,7 +68,7 @@ python -m compileall services
 PYTHONPATH=services/pipeline python -m pytest services/pipeline/tests
 ```
 
-The `PYTHONPATH` setting is important because the pipeline tests import both `run_pipeline.py` and modules from `services/pipeline/src`.
+The `PYTHONPATH` setting is important because the pipeline tests import modules from `services/pipeline/src` and exercise the packaged pipeline entrypoints.
 
 ## Local Verification
 

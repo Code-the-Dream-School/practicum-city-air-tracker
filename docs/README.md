@@ -19,21 +19,18 @@ Use these docs when onboarding to the repo, learning the workflow, reviewing pul
 - `collaboration/github_feature_branch_pr_guide.md`
 - `collaboration/pr_review_best_practices.md`
 - `collaboration/what_is_a_data_pipeline.md`
-- `collaboration/City_Air_Tracker_OpenWeather_Instructions v1.docx`
-- `collaboration/City_Air_Tracker_OpenWeather_POC_Plan v1.docx`
 - `collaboration/Postman Installation & Usage Guide.pdf`
-- `collaboration/github_feature_branch_pr_guide.pdf`
 
 ## Architecture
 
 Use these docs when you want to understand system structure, data flow, or dashboard design.
 
+- `architecture/runtime_architecture_guide.md`
+- `architecture/runtime_architecture_guide.pdf`
 - `architecture/architecture.md`
 - `architecture/data_flow_diagram.md`
+- `architecture/function_call_flows.md`
 - `architecture/postgresql_schema_design.md`
-- `architecture/application_architecture_guide.pdf`
-- `architecture/City_Air_Tracker_Architecture_Diagram.pdf`
-- `architecture/City_Air_Tracker_DataFlow_Diagram.pdf`
 
 ## Reference
 

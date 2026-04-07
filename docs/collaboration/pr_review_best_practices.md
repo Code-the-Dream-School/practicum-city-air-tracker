@@ -157,7 +157,7 @@ For this project, examples of useful validation include:
 
 - `pytest services/pipeline/tests -q`
 - targeted test files for changed pipeline behavior
-- `python services/pipeline/run_pipeline.py --source openweather --history-hours 72`
+- `python -m pipeline.cli --source openweather --history-hours 72`
 - `python services/dashboard/server.py`
 - `docker compose up --build`
 - verifying `/api/dashboard` returns the expected payload
