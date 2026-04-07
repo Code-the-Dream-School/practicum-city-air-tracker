@@ -1,4 +1,5 @@
 from argparse import Namespace
+from pathlib import Path
 import pytest
 
 import pipeline.cli as pipeline_cli
@@ -63,4 +64,4 @@ def test_main_supports_seed_cities(monkeypatch: pytest.MonkeyPatch):
 
     run_pipeline.main()
 
-    assert captured == {"cities_file": pipeline_cli.settings.cities_file}
+    assert captured == {"cities_file": Path(pipeline_cli.settings.cities_file)}

@@ -149,3 +149,33 @@ def test_geocode_city_writes_postgres_cache_on_miss(monkeypatch: pytest.MonkeyPa
     assert float(row[2]) == 2.3522
     assert row[3] == "Paris"
     assert row[4] == "FR"
+
+
+def test_lookup_city_id_handles_null_state(tmp_path: Path):
+    engine = _build_sqlite_engine(tmp_path / "geo-null-state.db")
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO cities (city, country_code, state, is_active)
+                VALUES ('Paris', 'FR', NULL, 1)
+                """
+            )
+        )
+
+        assert geocoding._lookup_city_id(connection, city="Paris", country_code="FR", state=None) == 1
+
+
+def test_lookup_city_id_handles_non_null_state(tmp_path: Path):
+    engine = _build_sqlite_engine(tmp_path / "geo-state.db")
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO cities (city, country_code, state, is_active)
+                VALUES ('Toronto', 'CA', 'ON', 1)
+                """
+            )
+        )
+
+        assert geocoding._lookup_city_id(connection, city="Toronto", country_code="CA", state="ON") == 1
