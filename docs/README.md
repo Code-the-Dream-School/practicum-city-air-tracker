@@ -8,6 +8,7 @@ Use these docs when you want to install, run, debug, or validate the project loc
 
 - `setup/local_postgresql_first_workflow.md`
 - `setup/run_and_debug_guide.md`
+- `setup/fresh_start_pipeline_bringup.md`
 - `setup/postgresql_migrations_guide.md`
 - `setup/docker_and_compose_walkthrough.md`
 - `setup/github_quality_gates_setup.md`
