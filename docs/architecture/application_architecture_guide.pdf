@@ -1,0 +1,799 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 2659 >>
+stream
+BT
+/F1 16 Tf
+50 790 Td
+/F1 18 Tf
+(Runtime Architecture Guide) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(This guide describes the current runtime architecture for the City Air Tracker application as) Tj
+0 -17 Td
+/F1 11 Tf
+(implemented in the repository today.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -24 Td
+/F1 15 Tf
+(Scheduling) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(The scheduling layer is intentionally thin. The shared orchestration runner lives in) Tj
+0 -17 Td
+/F1 11 Tf
+(`services/pipeline/src/pipeline/orchestration/__init__.py`, and the scheduler-facing wrapper) Tj
+0 -17 Td
+/F1 11 Tf
+(lives in `services/pipeline/src/pipeline/orchestration/scheduler.py`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(How scheduling integrates) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/run_pipeline.py` is the top-level script entrypoint.) Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/src/pipeline/cli.py` parses command-line arguments and calls the shared) Tj
+0 -17 Td
+/F1 11 Tf
+(`run_pipeline_job\(...\)`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/src/pipeline/orchestration/scheduler.py` exposes the same) Tj
+0 -17 Td
+/F1 11 Tf
+(`run_pipeline_job\(...\)` for scheduler use.) Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/src/pipeline/orchestration/__init__.py` contains the actual pipeline flow.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(This means manual CLI runs and future APScheduler-triggered runs use the same orchestration) Tj
+0 -17 Td
+/F1 11 Tf
+(path instead of duplicating pipeline logic.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(Scheduling functions) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(`pipeline.orchestration.scheduler.run_pipeline_job\(source="openweather", history_hours=None\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Thin scheduler-compatible wrapper.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Delegates directly to `pipeline.orchestration.run_pipeline_job\(...\)`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Designed so APScheduler can call it without knowing pipeline internals.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(`pipeline.orchestration.run_pipeline_job\(source="openweather", history_hours=None\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Main shared pipeline runner.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Creates output directories, computes the runtime window, creates a pipeline-run tracking) Tj
+0 -17 Td
+/F1 11 Tf
+(record, executes extract, transform, and load, then updates run status.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Returns a `PipelineRunResult` with run metadata and publish targets.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(`pipeline.cli.main\(\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+ET
+endstream
+endobj
+3 0 obj
+<< /Length 2452 >>
+stream
+BT
+/F1 16 Tf
+50 790 Td
+/F1 11 Tf
+(- CLI entrypoint for local or manual execution.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Parses `--source`, `--history-hours`, and `--seed-cities`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Calls the shared runner unless the command is explicitly seeding cities.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(How scheduling can be tested) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/tests/test_orchestration_scheduler.py` verifies the scheduler wrapper) Tj
+0 -17 Td
+/F1 11 Tf
+(delegates correctly.) Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/tests/test_orchestration_runner.py` verifies the shared orchestration) Tj
+0 -17 Td
+/F1 11 Tf
+(flow.) Tj
+0 -17 Td
+/F1 11 Tf
+(- `services/pipeline/tests/test_run_pipeline_cities_file.py` verifies the CLI also routes into) Tj
+0 -17 Td
+/F1 11 Tf
+(the shared runner.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(Current limitation:) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- APScheduler-compatible entrypoints exist, but recurring configurable schedule registration is) Tj
+0 -17 Td
+/F1 11 Tf
+(still a follow-up feature.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -24 Td
+/F1 15 Tf
+(Extract Stage) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(The extract stage is coordinated by `run_extract_stage\(...\)` in) Tj
+0 -17 Td
+/F1 11 Tf
+(`services/pipeline/src/pipeline/orchestration/__init__.py`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`ensure_output_directories\(\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Creates the raw and gold directories used by the pipeline runtime.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Keeps the run from failing later due to missing output folders.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`build_runtime_window\(history_hours\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Computes the UTC start and end timestamps for the extraction window.) Tj
+0 -17 Td
+/F1 11 Tf
+(- The current pipeline uses this to request OpenWeather historical pollution data for the) Tj
+0 -17 Td
+/F1 11 Tf
+(configured time span.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`run_extract_stage\(raw_dir, start, end, run_id, pipeline_run_id\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Reads the active cities, geocodes each city, and fetches the historical air-pollution payload) Tj
+0 -17 Td
+/F1 11 Tf
+(for each location.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Returns the list of raw records plus the number of processed cities.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Length 2417 >>
+stream
+BT
+/F1 16 Tf
+50 790 Td
+/F1 13 Tf
+(`extract.cities.read_cities\(path=None\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Chooses the configured city source.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Reads from PostgreSQL when `CITIES_SOURCE=postgres`, or from CSV when `CITIES_SOURCE=file`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`extract.cities.read_cities_from_db\(\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Reads active cities from the `cities` table.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Returns ordered `CitySpec` records used by orchestration.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`extract.cities.read_cities_file\(path\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Validates and reads the CSV city file.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Converts rows into normalized `CitySpec` values.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`extract.cities.seed_cities_from_file\(path\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Loads city definitions from CSV into PostgreSQL.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Inserts new cities, skips duplicates, and reports counts in `CitySeedResult`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`extract.geocoding.geocode_city\(raw_dir, city, country_code, state=None\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Resolves a city to latitude and longitude.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Reuses cached coordinates from PostgreSQL when available, or calls the OpenWeather geocoding) Tj
+0 -17 Td
+/F1 11 Tf
+(API and then upserts the cache.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`extract.openweather_air_pollution.fetch_air_pollution_history\(...\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Retrieves historical air-pollution data for a city and time window.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Reuses an existing raw response when the same city and window are already stored, otherwise) Tj
+0 -17 Td
+/F1 11 Tf
+(calls the OpenWeather API and persists the raw payload in PostgreSQL.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Returns a normalized `RawAirPollutionRecord`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -24 Td
+/F1 15 Tf
+(Transform Stage) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(The transform stage is coordinated by `run_transform_stage\(raw_records\)` in) Tj
+0 -17 Td
+/F1 11 Tf
+(`services/pipeline/src/pipeline/orchestration/__init__.py`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`run_transform_stage\(raw_records\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Length 2735 >>
+stream
+BT
+/F1 16 Tf
+50 790 Td
+/F1 11 Tf
+(- Converts the extracted raw records into the gold analytical DataFrame.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Delegates the real transformation work to `build_gold_from_raw_records\(...\)`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`transform.openweather_air_pollution_transform.build_gold_from_raw_records\(raw_records\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Expands each raw payload into one row per observation timestamp.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Builds normalized columns such as `aqi`, pollutant measures, `geo_id`, and location fields.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Sorts rows, removes duplicate `\(geo_id, ts\)` observations, and computes a rolling) Tj
+0 -17 Td
+/F1 11 Tf
+(`pm2_5_24h_avg`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Calls the risk-scoring helpers before returning the final DataFrame.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`transform.risk_scoring.add_aqi_category\(df\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Derives a human-readable AQI category from the pollution values.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Adds a categorical label used by downstream consumers such as the dashboard.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`transform.risk_scoring.add_risk_score\(df\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Computes a derived risk score from the transformed pollution data.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Adds a higher-level metric that complements the raw pollutant values and AQI category.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -24 Td
+/F1 15 Tf
+(Load Stage) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(The load stage is coordinated by `run_load_stage\(gold_df, gold_dir,) Tj
+0 -17 Td
+/F1 11 Tf
+(table_name="air_pollution_gold"\)` in) Tj
+0 -17 Td
+/F1 11 Tf
+(`services/pipeline/src/pipeline/orchestration/__init__.py`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`run_load_stage\(gold_df, gold_dir, table_name="air_pollution_gold"\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Sends the transformed gold dataset to the configured output targets.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Delegates persistence work to `publish_outputs\(...\)`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`load.storage.publish_outputs\(gold_df, gold_dir, table_name\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Central load function for all publish targets.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Writes the gold dataset to PostgreSQL when `USE_POSTGRES=1`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Writes a local Parquet artifact when `WRITE_GOLD_PARQUET=1`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Uploads a Parquet artifact to Azure Blob or Azurite when `WRITE_GOLD_AZURE_BLOB=1`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Returns a `PublishResult` describing which targets were used.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Length 2243 >>
+stream
+BT
+/F1 16 Tf
+50 790 Td
+/F1 13 Tf
+(`load.storage._upsert_gold_rows\(engine, gold_df, table_name\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Prepares and upserts gold rows into PostgreSQL.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Uses `INSERT ... ON CONFLICT \(geo_id, ts\) DO UPDATE` semantics so reruns update existing) Tj
+0 -17 Td
+/F1 11 Tf
+(observations instead of replacing the full table.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`load.storage._resolve_azure_blob_path\(table_name\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Builds the target blob path from `AZURE_BLOB_PATH`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Supports templates such as `exports/{table_name}.parquet`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`load.storage._upload_gold_to_azure_blob\(gold_df, table_name\)`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Creates the target blob container if needed.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Converts the DataFrame to Parquet bytes in memory and uploads the artifact to Azure Blob) Tj
+0 -17 Td
+/F1 11 Tf
+(Storage or Azurite.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -24 Td
+/F1 15 Tf
+(Docker Compose Services) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(The local stack is defined in `docker-compose.yml`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`postgres`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Local PostgreSQL database for the pipeline and dashboard.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Stores cities, geocoding cache, raw API responses, pipeline runs, and gold analytical data.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Includes a healthcheck so dependent services wait until the DB is ready.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`migrate`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Runs Alembic migrations against PostgreSQL.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Prepares the schema before pipeline execution.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`pipeline`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Runs the ETL pipeline as a one-shot batch job.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Waits for healthy PostgreSQL, successful migrations, and Azurite startup.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`dashboard`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Runs the application dashboard.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Length 2010 >>
+stream
+BT
+/F1 16 Tf
+50 790 Td
+/F1 11 Tf
+(- Reads from PostgreSQL and exposes the dashboard interface on port `8501`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`adminer`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Web UI for inspecting PostgreSQL manually.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Exposed on port `8080`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`azurite`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Local Azure Blob emulator.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Allows Azure-compatible Blob publishing to be developed and tested without a real Azure) Tj
+0 -17 Td
+/F1 11 Tf
+(account.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Exposed on port `10000`.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 13 Tf
+(`azurestorageexplorer`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- Browser-based storage explorer for Azurite.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Used to inspect uploaded blobs locally at `http://localhost:8081`.) Tj
+0 -17 Td
+/F1 11 Tf
+(- Configured with `AZURITE=true` and the shared Azurite connection string.) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -24 Td
+/F1 15 Tf
+(Architecture Review Notes) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(During this review, the architecture documentation was aligned with the current implementation) Tj
+0 -17 Td
+/F1 11 Tf
+(in these areas:) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(- the system is now documented as DB-first rather than file-first) Tj
+0 -17 Td
+/F1 11 Tf
+(- the shared orchestration runner and scheduler-facing wrapper are both represented) Tj
+0 -17 Td
+/F1 11 Tf
+(- load diagrams now include optional local Parquet and optional Azure Blob publishing) Tj
+0 -17 Td
+/F1 11 Tf
+(- the Docker Compose architecture now reflects `azurite` and `azurestorageexplorer`) Tj
+0 -17 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
+/F1 11 Tf
+(The remaining known gap is not documentation drift, but functionality: recurring APScheduler) Tj
+0 -17 Td
+/F1 11 Tf
+(schedule configuration is still a follow-up feature on top of the current scheduler-compatible) Tj
+0 -17 Td
+/F1 11 Tf
+(entrypoint.) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Pages /Kids [9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R] /Count 6 >>
+endobj
+9 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+10 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+11 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 4 0 R >>
+endobj
+12 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 5 0 R >>
+endobj
+13 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 6 0 R >>
+endobj
+14 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 7 0 R >>
+endobj
+15 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000002796 00000 n 
+0000005300 00000 n 
+0000007769 00000 n 
+0000010556 00000 n 
+0000012851 00000 n 
+0000014913 00000 n 
+0000015005 00000 n 
+0000015131 00000 n 
+0000015258 00000 n 
+0000015385 00000 n 
+0000015512 00000 n 
+0000015639 00000 n 
+0000015766 00000 n 
+trailer
+<< /Size 16 /Root 15 0 R >>
+startxref
+15816
+%%EOF
