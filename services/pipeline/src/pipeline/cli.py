@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from pipeline.common.config import settings
 from pipeline.extract.cities import seed_cities_from_file
@@ -15,7 +16,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.seed_cities:
-        seed_cities_from_file(settings.cities_file)
+        seed_cities_from_file(Path(settings.cities_file))
         return
 
     run_pipeline_job(source=args.source, history_hours=args.history_hours)

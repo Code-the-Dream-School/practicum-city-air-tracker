@@ -26,27 +26,43 @@ def _build_postgres_engine():
 
 
 def _lookup_city_id(connection, city: str, country_code: str, state: str | None) -> int:
-    row = connection.execute(
-        text(
-            """
-            SELECT id
-            FROM cities
-            WHERE city = :city
-              AND country_code = :country_code
-              AND (
-                (:state IS NULL AND state IS NULL)
-                OR state = :state
-              )
-            ORDER BY id
-            LIMIT 1
-            """
-        ),
-        {
-            "city": city,
-            "country_code": country_code,
-            "state": state,
-        },
-    ).fetchone()
+    if state is None:
+        row = connection.execute(
+            text(
+                """
+                SELECT id
+                FROM cities
+                WHERE city = :city
+                  AND country_code = :country_code
+                  AND state IS NULL
+                ORDER BY id
+                LIMIT 1
+                """
+            ),
+            {
+                "city": city,
+                "country_code": country_code,
+            },
+        ).fetchone()
+    else:
+        row = connection.execute(
+            text(
+                """
+                SELECT id
+                FROM cities
+                WHERE city = :city
+                  AND country_code = :country_code
+                  AND state = :state
+                ORDER BY id
+                LIMIT 1
+                """
+            ),
+            {
+                "city": city,
+                "country_code": country_code,
+                "state": state,
+            },
+        ).fetchone()
 
     if row is None:
         raise ValueError(
