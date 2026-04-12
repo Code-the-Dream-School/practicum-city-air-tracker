@@ -1,3 +1,5 @@
+from urllib.parse import quote, urlencode
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +25,8 @@ class Settings(BaseSettings):
     postgres_db: str = "cityair"
     postgres_user: str = "cityair"
     postgres_password: str = "cityair"
+    postgres_sslmode: str = ""
+    postgres_sslrootcert: str = ""
     azure_storage_connection_string: str = ""
     azure_blob_container: str = "gold"
     azure_blob_path: str = "exports/{table_name}.parquet"
@@ -31,9 +35,21 @@ class Settings(BaseSettings):
 
     @property
     def postgres_sqlalchemy_url(self) -> str:
+        user = quote(self.postgres_user, safe="")
+        password = quote(self.postgres_password, safe="")
+        database = quote(self.postgres_db, safe="")
+
+        query_params: dict[str, str] = {}
+        if self.postgres_sslmode.strip():
+            query_params["sslmode"] = self.postgres_sslmode.strip()
+        if self.postgres_sslrootcert.strip():
+            query_params["sslrootcert"] = self.postgres_sslrootcert.strip()
+
+        query = f"?{urlencode(query_params)}" if query_params else ""
+
         return (
-            f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+            f"postgresql+psycopg://{user}:{password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{database}{query}"
         )
 
 

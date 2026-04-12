@@ -11,6 +11,7 @@ This repo contains a Code the Dream-friendly batch ETL project that:
 The pipeline now uses DB-first gold persistence by default, with PostgreSQL as the primary gold-data target and Parquet export as an explicit optional setting.
 Azure Blob publishing is also optional and can be tested locally through Azurite in Docker Compose.
 City configuration, geocoding cache, and raw extract persistence are also moving into PostgreSQL as runtime state.
+The same PostgreSQL runtime path can target either local Docker/Postgres or managed Azure Database for PostgreSQL through environment configuration.
 
 ## Main run guide
 
@@ -30,6 +31,8 @@ Use `docs/setup/local_postgresql_first_workflow.md` for the consolidated local P
 - pipeline run commands
 - PostgreSQL verification queries
 - DB-native test commands
+
+Use `docs/setup/azure_postgresql_configuration.md` for managed Azure Database for PostgreSQL configuration guidance.
 
 ## One-command local environment setup
 

@@ -139,6 +139,8 @@ POSTGRES_PORT=5432
 POSTGRES_DB=cityair
 POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
+POSTGRES_SSLMODE=
+POSTGRES_SSLROOTCERT=
 AZURE_STORAGE_CONNECTION_STRING=
 AZURE_BLOB_CONTAINER=gold
 AZURE_BLOB_PATH=exports/{table_name}.parquet
@@ -151,9 +153,11 @@ AZURE_BLOB_PATH=exports/{table_name}.parquet
 - `CITIES_FILE=configs/cities.csv` points the seed/import workflow to the checked-in city list on your machine.
 - `DATA_DIR`, `RAW_DIR`, and `GOLD_DIR` must use local paths, not `/app/...` container paths.
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target during local runs.
+- `POSTGRES_SSLMODE=` and `POSTGRES_SSLROOTCERT=` stay empty for normal local development.
 - `WRITE_GOLD_PARQUET=0` keeps Parquet export disabled unless you explicitly want a secondary file artifact.
 - `WRITE_GOLD_AZURE_BLOB=0` keeps Azure Blob publishing disabled unless you explicitly want to test the Blob upload path.
 - when Blob publishing is enabled, you can point the same settings at either local Azurite or real Azure Blob Storage; see [azure_blob_storage_configuration.md](./azure_blob_storage_configuration.md)
+- to target managed Azure Database for PostgreSQL instead of local PostgreSQL, keep the same runtime path and change only the PostgreSQL environment values; see [azure_postgresql_configuration.md](./azure_postgresql_configuration.md)
 
 ### Exact commands to run locally without Docker
 

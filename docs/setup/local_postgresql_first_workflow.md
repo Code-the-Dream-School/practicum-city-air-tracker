@@ -44,6 +44,8 @@ POSTGRES_PORT=5432
 POSTGRES_DB=cityair
 POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
+POSTGRES_SSLMODE=
+POSTGRES_SSLROOTCERT=
 AZURE_STORAGE_CONNECTION_STRING=
 AZURE_BLOB_CONTAINER=gold
 AZURE_BLOB_PATH=exports/{table_name}.parquet
@@ -53,9 +55,11 @@ AZURE_BLOB_PATH=exports/{table_name}.parquet
 Notes:
 
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target.
+- `POSTGRES_SSLMODE=` and `POSTGRES_SSLROOTCERT=` stay empty for the normal local workflow.
 - `WRITE_GOLD_PARQUET=0` disables Parquet unless you explicitly want a secondary export for debugging or compatibility.
 - `WRITE_GOLD_AZURE_BLOB=0` keeps Azure Blob publishing disabled during normal local DB-first work unless you are explicitly testing the Blob path.
 - when you do enable Blob publishing, you can target either local Azurite or real Azure Blob Storage by changing only the Azure environment variables; see [azure_blob_storage_configuration.md](./azure_blob_storage_configuration.md)
+- to target managed Azure Database for PostgreSQL, keep the same DB-first runtime path and change only the PostgreSQL environment values; see [azure_postgresql_configuration.md](./azure_postgresql_configuration.md)
 - `CITIES_SOURCE=postgres` means normal pipeline runs read cities from the database.
 - `CITIES_FILE` is still used for the seed/import step.
 
