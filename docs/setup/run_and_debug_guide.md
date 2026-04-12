@@ -153,6 +153,7 @@ AZURE_BLOB_PATH=exports/{table_name}.parquet
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target during local runs.
 - `WRITE_GOLD_PARQUET=0` keeps Parquet export disabled unless you explicitly want a secondary file artifact.
 - `WRITE_GOLD_AZURE_BLOB=0` keeps Azure Blob publishing disabled unless you explicitly want to test the Blob upload path.
+- when Blob publishing is enabled, you can point the same settings at either local Azurite or real Azure Blob Storage; see [azure_blob_storage_configuration.md](./azure_blob_storage_configuration.md)
 
 ### Exact commands to run locally without Docker
 

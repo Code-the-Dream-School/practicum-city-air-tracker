@@ -94,6 +94,13 @@ Optional Blob flow for local testing:
 4. open the browser explorer at `http://localhost:8081`
 5. confirm the blob exists under container `gold` at `exports/air_pollution_gold.parquet`
 
+To target real Azure Blob Storage instead of Azurite, keep the same
+`WRITE_GOLD_AZURE_BLOB`, `AZURE_STORAGE_CONNECTION_STRING`,
+`AZURE_BLOB_CONTAINER`, and `AZURE_BLOB_PATH` settings but replace the local
+connection string with your production Azure values. See
+[`docs/setup/azure_blob_storage_configuration.md`](docs/setup/azure_blob_storage_configuration.md)
+for local-vs-production examples.
+
 ## PostgreSQL schema bootstrap
 
 The PostgreSQL-first migration path uses Alembic for schema versioning.
