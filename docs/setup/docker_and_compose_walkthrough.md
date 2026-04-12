@@ -188,6 +188,11 @@ Expected blob location:
 Important UI note:
 
 - inside the browser explorer, the path should be `exports/`
+
+This Docker Compose flow is for local Azurite development. To publish the same
+artifact to real Azure Blob Storage, keep the same environment variable names
+and replace the Azurite connection string with your production Azure connection
+string. See [`azure_blob_storage_configuration.md`](./azure_blob_storage_configuration.md).
 - not `gold/exports/`
 
 ## Recommended commands

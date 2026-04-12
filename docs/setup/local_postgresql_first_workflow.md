@@ -55,6 +55,7 @@ Notes:
 - `USE_POSTGRES=1` keeps PostgreSQL as the primary gold-data target.
 - `WRITE_GOLD_PARQUET=0` disables Parquet unless you explicitly want a secondary export for debugging or compatibility.
 - `WRITE_GOLD_AZURE_BLOB=0` keeps Azure Blob publishing disabled during normal local DB-first work unless you are explicitly testing the Blob path.
+- when you do enable Blob publishing, you can target either local Azurite or real Azure Blob Storage by changing only the Azure environment variables; see [azure_blob_storage_configuration.md](./azure_blob_storage_configuration.md)
 - `CITIES_SOURCE=postgres` means normal pipeline runs read cities from the database.
 - `CITIES_FILE` is still used for the seed/import step.
 
