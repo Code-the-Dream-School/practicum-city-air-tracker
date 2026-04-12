@@ -4,24 +4,31 @@ This guide describes the current runtime architecture for the City Air Tracker a
 
 ## Scheduling
 
-The scheduling layer is intentionally thin. The shared orchestration runner lives in `services/pipeline/src/pipeline/orchestration/__init__.py`, and the scheduler-facing wrapper lives in `services/pipeline/src/pipeline/orchestration/scheduler.py`.
+The scheduling layer is intentionally thin. The shared orchestration runner lives in `services/pipeline/src/pipeline/orchestration/__init__.py`. The active orchestration path is the Prefect runtime module in `services/pipeline/src/pipeline/prefect_runtime.py`, while `services/pipeline/src/pipeline/orchestration/scheduler.py` remains as a temporary compatibility wrapper.
 
 ### How scheduling integrates
 
 - `services/pipeline/run_pipeline.py` is the top-level script entrypoint.
 - `services/pipeline/src/pipeline/cli.py` parses command-line arguments and calls the shared `run_pipeline_job(...)`.
-- `services/pipeline/src/pipeline/orchestration/scheduler.py` exposes the same `run_pipeline_job(...)` for scheduler use.
+- `services/pipeline/src/pipeline/prefect_runtime.py` exposes a Prefect flow wrapper around the shared `run_pipeline_job(...)`.
+- `services/pipeline/src/pipeline/orchestration/scheduler.py` remains as a temporary compatibility wrapper for older scheduler-style imports.
 - `services/pipeline/src/pipeline/orchestration/__init__.py` contains the actual pipeline flow.
 
-This means manual CLI runs and future APScheduler-triggered runs use the same orchestration path instead of duplicating pipeline logic.
+This means manual CLI runs and Prefect-managed runs use the same orchestration path instead of duplicating pipeline logic.
 
 ### Scheduling functions
 
+`pipeline.prefect_runtime.run_pipeline_flow(source="openweather", history_hours=None)`
+
+- Prefect flow wrapper around the shared orchestration runner.
+- Delegates directly to `pipeline.orchestration.run_pipeline_job(...)`.
+- Provides the runtime entrypoint for `python -m pipeline.prefect_runtime` and future Prefect-managed execution.
+
 `pipeline.orchestration.scheduler.run_pipeline_job(source="openweather", history_hours=None)`
 
-- Thin scheduler-compatible wrapper.
+- Thin temporary compatibility wrapper.
 - Delegates directly to `pipeline.orchestration.run_pipeline_job(...)`.
-- Designed so APScheduler can call it without knowing pipeline internals.
+- Preserved so older scheduler-style imports still work during the Prefect transition.
 
 `pipeline.orchestration.run_pipeline_job(source="openweather", history_hours=None)`
 
@@ -38,12 +45,13 @@ This means manual CLI runs and future APScheduler-triggered runs use the same or
 ### How scheduling can be tested
 
 - `services/pipeline/tests/test_orchestration_scheduler.py` verifies the scheduler wrapper delegates correctly.
+- `services/pipeline/tests/test_prefect_runtime.py` verifies the Prefect runtime wrapper delegates correctly.
 - `services/pipeline/tests/test_orchestration_runner.py` verifies the shared orchestration flow.
 - `services/pipeline/tests/test_run_pipeline_cities_file.py` verifies the CLI also routes into the shared runner.
 
 Current limitation:
 
-- APScheduler-compatible entrypoints exist, but recurring configurable schedule registration is still a follow-up feature.
+- The Prefect runtime entrypoint exists, but recurring configurable schedule registration is still a follow-up feature.
 
 ## Extract Stage
 
@@ -204,4 +212,4 @@ During this review, the architecture documentation was aligned with the current 
 - load diagrams now include optional local Parquet and optional Azure Blob publishing
 - the Docker Compose architecture now reflects `azurite` and `azurestorageexplorer`
 
-The remaining known gap is not documentation drift, but functionality: recurring APScheduler schedule configuration is still a follow-up feature on top of the current scheduler-compatible entrypoint.
+The remaining known gap is not documentation drift, but functionality: recurring Prefect schedule configuration is still a follow-up feature on top of the current shared runner and Prefect runtime entrypoint.
