@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 
 [project.scripts]
 city-air-pipeline = "pipeline.cli:main"
+city-air-pipeline-prefect = "pipeline.prefect_runtime:main"
 
 [tool.setuptools]
 package-dir = {"" = "services/pipeline/src"}
