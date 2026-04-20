@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pipeline.common.config import settings
 from pipeline.orchestration import run_pipeline_job
@@ -33,7 +33,7 @@ def _ensure_prefect_available() -> None:
 
 
 @prefect_flow(name="city-air-pipeline")
-def run_pipeline_flow(source: str = "openweather", history_hours: int | None = None):
+def run_pipeline_flow(source: str = "openweather", history_hours: Optional[int] = None):
     """Prefect-facing flow wrapper around the shared pipeline runner."""
     _ensure_prefect_available()
     return run_pipeline_job(source=source, history_hours=history_hours)
