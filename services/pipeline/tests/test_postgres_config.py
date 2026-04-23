@@ -2,10 +2,19 @@ from pipeline.common.config import Settings
 
 
 def test_default_gold_target_is_postgres_first():
-    settings = Settings()
+    settings = Settings(
+        use_postgres=True,
+        write_gold_parquet=False,
+        azure_storage_connection_string="",
+        azure_storage_account_url="",
+        azure_storage_credential="",
+    )
 
     assert settings.use_postgres is True
     assert settings.write_gold_parquet is False
+    assert settings.azure_storage_connection_string == ""
+    assert settings.azure_storage_account_url == ""
+    assert settings.azure_storage_credential == ""
 
 
 def test_postgres_sqlalchemy_url_uses_postgres_settings():
