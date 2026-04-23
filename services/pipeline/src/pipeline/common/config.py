@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     postgres_sslmode: str = ""
     postgres_sslrootcert: str = ""
     azure_storage_connection_string: str = ""
+    azure_storage_account_url: str = ""
+    azure_storage_credential: str = ""
     azure_blob_container: str = "gold"
     azure_blob_path: str = "exports/{table_name}.parquet"
 

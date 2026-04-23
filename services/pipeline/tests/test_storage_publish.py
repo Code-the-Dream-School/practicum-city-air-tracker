@@ -138,6 +138,39 @@ def test_publish_outputs_supports_azure_blob_only(
     assert result.rows == 1
 
 
+def test_build_blob_service_client_supports_account_url_and_credential(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(storage.settings, "azure_storage_connection_string", "")
+    monkeypatch.setattr(
+        storage.settings,
+        "azure_storage_account_url",
+        "https://cityair.blob.core.windows.net",
+    )
+    monkeypatch.setattr(storage.settings, "azure_storage_credential", "super-secret-key")
+
+    captured: dict[str, object] = {}
+
+    class DummyBlobServiceClient:
+        def __init__(self, *, account_url, credential):
+            captured["account_url"] = account_url
+            captured["credential"] = credential
+
+    monkeypatch.setattr(
+        storage,
+        "_import_azure_blob_clients",
+        lambda: (DummyBlobServiceClient, type("DummyExists", (Exception,), {})),
+    )
+
+    client = storage._build_blob_service_client()
+
+    assert isinstance(client, DummyBlobServiceClient)
+    assert captured == {
+        "account_url": "https://cityair.blob.core.windows.net",
+        "credential": "super-secret-key",
+    }
+
+
 def test_publish_outputs_requires_connection_string_for_azure_blob(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
@@ -145,9 +178,14 @@ def test_publish_outputs_requires_connection_string_for_azure_blob(
     monkeypatch.setattr(storage.settings, "write_gold_parquet", False)
     monkeypatch.setattr(storage.settings, "write_gold_azure_blob", True)
     monkeypatch.setattr(storage.settings, "azure_storage_connection_string", "")
+    monkeypatch.setattr(storage.settings, "azure_storage_account_url", "")
+    monkeypatch.setattr(storage.settings, "azure_storage_credential", "")
     monkeypatch.setattr(storage.settings, "azure_blob_container", "gold")
 
-    with pytest.raises(ValueError, match=r"AZURE_STORAGE_CONNECTION_STRING"):
+    with pytest.raises(
+        ValueError,
+        match=r"AZURE_STORAGE_CONNECTION_STRING .* AZURE_STORAGE_ACCOUNT_URL .* AZURE_STORAGE_CREDENTIAL",
+    ):
         storage.publish_outputs(
             gold_df=build_gold_df(),
             gold_dir=tmp_path,

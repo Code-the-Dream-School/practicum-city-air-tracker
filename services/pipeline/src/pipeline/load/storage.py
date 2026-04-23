@@ -52,13 +52,20 @@ def _import_azure_blob_clients():
 
 def _build_blob_service_client():
     connection_string = settings.azure_storage_connection_string.strip()
-    if not connection_string:
-        raise ValueError(
-            "WRITE_GOLD_AZURE_BLOB=1 requires AZURE_STORAGE_CONNECTION_STRING to be set"
-        )
+    if connection_string:
+        BlobServiceClient, _ = _import_azure_blob_clients()
+        return BlobServiceClient.from_connection_string(connection_string)
 
-    BlobServiceClient, _ = _import_azure_blob_clients()
-    return BlobServiceClient.from_connection_string(connection_string)
+    account_url = settings.azure_storage_account_url.strip()
+    credential = settings.azure_storage_credential.strip()
+    if account_url and credential:
+        BlobServiceClient, _ = _import_azure_blob_clients()
+        return BlobServiceClient(account_url=account_url, credential=credential)
+
+    raise ValueError(
+        "WRITE_GOLD_AZURE_BLOB=1 requires either AZURE_STORAGE_CONNECTION_STRING "
+        "or both AZURE_STORAGE_ACCOUNT_URL and AZURE_STORAGE_CREDENTIAL to be set"
+    )
 
 
 def _resolve_azure_blob_path(table_name: str) -> str:

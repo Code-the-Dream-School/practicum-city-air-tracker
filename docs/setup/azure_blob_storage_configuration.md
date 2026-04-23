@@ -16,6 +16,8 @@ The Azure-compatible publish path is controlled by these settings:
 ```dotenv
 WRITE_GOLD_AZURE_BLOB=1
 AZURE_STORAGE_CONNECTION_STRING=...
+AZURE_STORAGE_ACCOUNT_URL=
+AZURE_STORAGE_CREDENTIAL=
 AZURE_BLOB_CONTAINER=gold
 AZURE_BLOB_PATH=exports/{table_name}.parquet
 ```
@@ -25,7 +27,12 @@ What each setting does:
 - `WRITE_GOLD_AZURE_BLOB=1`
   enables Blob publishing
 - `AZURE_STORAGE_CONNECTION_STRING`
-  chooses the storage account or emulator target
+  chooses the storage account or emulator target when you want a single
+  connection-string value
+- `AZURE_STORAGE_ACCOUNT_URL`
+  points directly at a real Azure Blob Storage account endpoint
+- `AZURE_STORAGE_CREDENTIAL`
+  supplies the account key or SAS token for the account URL flow
 - `AZURE_BLOB_CONTAINER`
   chooses the destination container
 - `AZURE_BLOB_PATH`
@@ -45,6 +52,8 @@ Use this when running the local Docker Compose stack with Azurite:
 ```dotenv
 WRITE_GOLD_AZURE_BLOB=1
 AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+AZURE_STORAGE_ACCOUNT_URL=
+AZURE_STORAGE_CREDENTIAL=
 AZURE_BLOB_CONTAINER=gold
 AZURE_BLOB_PATH=exports/{table_name}.parquet
 ```
@@ -62,6 +71,20 @@ Use this pattern when targeting a real Azure Storage account:
 ```dotenv
 WRITE_GOLD_AZURE_BLOB=1
 AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=YOUR_ACCOUNT;AccountKey=YOUR_KEY;EndpointSuffix=core.windows.net
+AZURE_STORAGE_ACCOUNT_URL=
+AZURE_STORAGE_CREDENTIAL=
+AZURE_BLOB_CONTAINER=gold
+AZURE_BLOB_PATH=exports/{table_name}.parquet
+```
+
+Or, if you prefer split production settings instead of a single connection
+string:
+
+```dotenv
+WRITE_GOLD_AZURE_BLOB=1
+AZURE_STORAGE_CONNECTION_STRING=
+AZURE_STORAGE_ACCOUNT_URL=https://YOUR_ACCOUNT.blob.core.windows.net
+AZURE_STORAGE_CREDENTIAL=YOUR_ACCOUNT_KEY_OR_SAS_TOKEN
 AZURE_BLOB_CONTAINER=gold
 AZURE_BLOB_PATH=exports/{table_name}.parquet
 ```
@@ -69,7 +92,7 @@ AZURE_BLOB_PATH=exports/{table_name}.parquet
 Notes:
 
 - no code changes are required when switching from Azurite to real Azure
-- the main change is the connection string
+- the main change is the storage target configuration
 - you may keep the same container and blob path pattern if they already match
   your deployment needs
 - if your production naming convention differs, change only
