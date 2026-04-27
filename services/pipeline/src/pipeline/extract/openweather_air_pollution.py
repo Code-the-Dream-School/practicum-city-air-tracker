@@ -152,7 +152,7 @@ def fetch_air_pollution_history(
     del raw_dir
 
     if not settings.openweather_api_key or settings.openweather_api_key == "CHANGEME":
-        raise ValueError("OPENWEATHER_API_KEY must be set in .env")
+        raise ValueError("OPENWEATHER_API_KEY must be set in the active env profile")
 
     geo_id = _geo_id(city, country_code, lat, lon)
     engine = _build_postgres_engine()

@@ -17,7 +17,7 @@ Alembic is configured at the repository root:
 Alembic resolves the target database in this order:
 
 1. `ALEMBIC_DATABASE_URL`, if set
-2. the PostgreSQL connection values already defined in `.env`
+2. the PostgreSQL connection values already defined in the active env profile, which defaults to `.env.local`
 
 That means the normal application settings can drive migrations without adding a second required database configuration path.
 

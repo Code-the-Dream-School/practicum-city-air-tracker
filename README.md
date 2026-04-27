@@ -19,7 +19,7 @@ Use `docs/setup/run_and_debug_guide.md` for:
 
 - local Python installation
 - Python library installation
-- local non-Docker `.env` configuration
+- local non-Docker `.env.local` configuration
 - local VS Code debugging
 - Docker Compose installation
 - Docker Compose configuration, launch, and verification
@@ -33,6 +33,25 @@ Use `docs/setup/local_postgresql_first_workflow.md` for the consolidated local P
 - DB-native test commands
 
 Use `docs/setup/azure_postgresql_configuration.md` for managed Azure Database for PostgreSQL configuration guidance.
+Use `docs/setup/environment_profiles_guide.md` to keep separate local and Azure env files without overwriting your normal Docker settings.
+Use `bash scripts/generate_env_profiles.sh` to create `.env.local` and `.env.azure` from the tracked templates in `configs/env/`.
+Use `ENV_FILE=.env.azure ...` when you want to run the app, migrations, or Docker Compose against the Azure profile.
+
+## Run modes
+
+This repo currently supports three practical run modes:
+
+1. Local without Docker
+   Uses `.env.local` with local filesystem paths and a local PostgreSQL instance.
+2. Local with Docker
+   Uses `.env.local` with Docker Compose, container paths, local Postgres, and Azurite.
+3. Cloud-connected
+   Uses `ENV_FILE=.env.azure` so the app or local containers point at Azure-backed resources such as Azure Database for PostgreSQL and Azure Blob Storage.
+
+Important:
+
+- the cloud-connected mode changes which resources the app talks to
+- it does not by itself deploy the app into Azure
 
 ## One-command local environment setup
 
@@ -92,7 +111,7 @@ Quick sequence:
 Optional Blob flow for local testing:
 
 1. set `WRITE_GOLD_AZURE_BLOB=1`
-2. keep the Azurite connection string from `.env.example`
+2. keep the Azurite connection string from `.env.local`
 3. run `docker compose up --build`
 4. open the browser explorer at `http://localhost:8081`
 5. confirm the blob exists under container `gold` at `exports/air_pollution_gold.parquet`

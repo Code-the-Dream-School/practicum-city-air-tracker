@@ -1,6 +1,11 @@
+import os
 from urllib.parse import quote, urlencode
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _resolve_env_file() -> str:
+    return os.getenv("ENV_FILE", ".env.local")
 
 
 class Settings(BaseSettings):
@@ -33,7 +38,7 @@ class Settings(BaseSettings):
     azure_blob_container: str = "gold"
     azure_blob_path: str = "exports/{table_name}.parquet"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_resolve_env_file(), extra="ignore")
 
     @property
     def postgres_sqlalchemy_url(self) -> str:

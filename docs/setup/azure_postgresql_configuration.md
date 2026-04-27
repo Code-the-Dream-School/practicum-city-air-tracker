@@ -10,6 +10,10 @@ The same PostgreSQL code path is used for:
 
 Switching targets should only require environment variable changes.
 
+If you keep Azure values in `.env.azure`, run commands with
+`ENV_FILE=.env.azure` so the Azure profile is active without replacing your
+local `.env.local`.
+
 ## Environment Variables
 
 The PostgreSQL runtime path uses these settings:
@@ -97,7 +101,12 @@ To verify the Azure PostgreSQL configuration:
 
 - confirm the environment values point to the intended Azure server
 - confirm `POSTGRES_SSLMODE=require` or the required SSL mode for your setup
-- run the usual pipeline command
+- run the usual pipeline command, for example
+
+```bash
+ENV_FILE=.env.azure python -m pipeline.cli --source openweather --history-hours 72
+```
+
 - verify rows appear in the expected PostgreSQL tables, such as:
   - `pipeline_runs`
   - `raw_air_pollution_responses`

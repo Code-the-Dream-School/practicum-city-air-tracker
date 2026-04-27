@@ -21,9 +21,9 @@ Before you start, make sure you have:
 
 If you have not set up Python yet, start with [run_and_debug_guide.md](/home/eugen/code-the-dream-workspace/practicum-city-air-tracker/docs/setup/run_and_debug_guide.md).
 
-## 1. Configure `.env`
+## 1. Configure `.env.local`
 
-Create `.env` from `.env.example`, then use local machine paths and PostgreSQL settings like these:
+Generate `.env.local` with `bash scripts/generate_env_profiles.sh`, then use local machine paths and PostgreSQL settings like these:
 
 ```dotenv
 OPENWEATHER_API_KEY=YOUR_REAL_KEY
@@ -156,7 +156,7 @@ pytest services/pipeline/tests/test_postgres_config.py \
 
 For local debugging:
 
-- keep the same PostgreSQL-first `.env` settings
+- keep the same PostgreSQL-first `.env.local` settings
 - use local paths such as `./data/raw` and `./data/gold`
 - keep `USE_POSTGRES=1`
 - leave `WRITE_GOLD_PARQUET=0` unless you need a file artifact for dashboard debugging

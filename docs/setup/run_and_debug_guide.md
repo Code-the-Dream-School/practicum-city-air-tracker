@@ -102,7 +102,7 @@ python -m pip install -r requirements.txt
 
 ## 3. Run locally without Docker
 
-If you want to run this project locally without Docker, use Python plus a virtual environment and set `.env` to local filesystem paths.
+If you want to run this project locally without Docker, use Python plus a virtual environment and set `.env.local` to local filesystem paths.
 
 For the most direct DB-first setup and validation path, use [local_postgresql_first_workflow.md](/home/eugen/code-the-dream-workspace/practicum-city-air-tracker/docs/setup/local_postgresql_first_workflow.md) alongside this guide.
 
@@ -111,11 +111,11 @@ Important:
 - PostgreSQL is the primary gold-data target on this branch.
 - The React dashboard reads PostgreSQL-backed data through the dashboard server API.
 - For running the application locally without Docker, you should have PostgreSQL available and keep `USE_POSTGRES=1`.
-- The checked-in `.env.example` is Docker-oriented, so you must change it for local runs.
+- The checked-in `configs/env/local.template` is Docker-oriented, so you must change the generated `.env.local` for local runs.
 
-### Exact `.env` values for local-without-Docker
+### Exact `.env.local` values for local-without-Docker
 
-Create `.env` from `.env.example`, then make it match this:
+Generate `.env.local` with `bash scripts/generate_env_profiles.sh`, then make it match this:
 
 ```dotenv
 # ---- Pipeline ----
@@ -161,7 +161,7 @@ AZURE_BLOB_PATH=exports/{table_name}.parquet
 
 ### Exact commands to run locally without Docker
 
-After your virtual environment is active and `.env` matches the values above:
+After your virtual environment is active and `.env.local` matches the values above:
 
 1. Seed cities into PostgreSQL:
 
@@ -221,9 +221,9 @@ Install the Python dependencies using the steps in section 2, then open the proj
 
 ### Important local-path note
 
-The checked-in `.env.example` file uses Docker container paths such as `/app/data` and `/app/configs/cities.csv`.
+The checked-in `configs/env/local.template` file uses Docker container paths such as `/app/data` and `/app/configs/cities.csv`.
 
-For local VS Code debugging, use local filesystem paths instead. In a real `.env` file, use absolute paths or project-relative paths, not `${workspaceFolder}`.
+For local VS Code debugging, use local filesystem paths instead. In a real `.env.local` file, use absolute paths or project-relative paths, not `${workspaceFolder}`.
 
 ```dotenv
 OPENWEATHER_API_KEY=YOUR_REAL_KEY
@@ -243,9 +243,9 @@ POSTGRES_USER=cityair
 POSTGRES_PASSWORD=cityair
 ```
 
-Because `.env` is loaded by the app at runtime, the safest approach is either:
+Because `.env.local` is loaded by the app at runtime, the safest approach is either:
 
-- temporarily edit `.env` for local debugging, or
+- temporarily edit `.env.local` for local debugging, or
 - add the environment variables directly in `.vscode/launch.json`
 
 ### Recommended `launch.json`
@@ -409,23 +409,23 @@ git pull
 
 Start Docker Desktop and wait until it reports that Docker is running.
 
-#### Step 3: Create your `.env` file
+#### Step 3: Create your `.env.local` file
 
 From the project root:
 
 ```bash
-cp .env.example .env
+bash scripts/generate_env_profiles.sh
 ```
 
 On Windows PowerShell:
 
 ```powershell
-Copy-Item .env.example .env
+wsl bash scripts/generate_env_profiles.sh
 ```
 
 #### Step 4: Set your OpenWeather API key
 
-Edit `.env` and replace:
+Edit `.env.local` and replace:
 
 ```dotenv
 OPENWEATHER_API_KEY=CHANGEME
@@ -433,7 +433,7 @@ OPENWEATHER_API_KEY=CHANGEME
 
 with your real key.
 
-For Docker Compose on this branch, the default `.env.example` paths are already set correctly:
+For Docker Compose on this branch, the default template paths are already set correctly:
 
 ```dotenv
 CITIES_FILE=/app/configs/cities.csv
@@ -595,7 +595,7 @@ Notes:
 - On this branch, Postgres is part of the normal runtime path and should stay enabled.
 - Parquet export remains optional and only runs when `WRITE_GOLD_PARQUET=1`.
 - Azure Blob publishing remains optional and only runs when `WRITE_GOLD_AZURE_BLOB=1`.
-- The checked-in `.env.example` uses an Azurite connection string so Blob uploads can be tested locally through Docker Compose.
+- The checked-in `configs/env/local.template` uses an Azurite connection string so Blob uploads can be tested locally through Docker Compose.
 
 #### Step 10: Stop the application
 
@@ -640,7 +640,7 @@ docker compose logs pipeline
 
 Check:
 
-- `OPENWEATHER_API_KEY` is set correctly in `.env`
+- `OPENWEATHER_API_KEY` is set correctly in `.env.local` or the active env profile
 - Your network can reach OpenWeather
 - You are not hitting API rate limits
 
@@ -675,7 +675,7 @@ Project files:
 
 - `docker-compose.yml`
 - `requirements.txt`
-- `.env.example`
+- `configs/env/local.template`
 - `README.md`
 - `services/pipeline/Dockerfile`
 - `services/dashboard/Dockerfile`

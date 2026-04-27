@@ -159,7 +159,7 @@ def geocode_city(raw_dir: Path, city: str, country_code: str, state: str | None 
             return cached
 
     if not settings.openweather_api_key or settings.openweather_api_key == "CHANGEME":
-        raise ValueError("OPENWEATHER_API_KEY must be set in .env")
+        raise ValueError("OPENWEATHER_API_KEY must be set in the active env profile")
 
     q = f"{city},{country_code}"
     if state:
