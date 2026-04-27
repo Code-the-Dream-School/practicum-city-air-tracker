@@ -1,3 +1,6 @@
+# Local profile template.
+# Generate `.env.local` and `.env.azure` with `bash scripts/generate_env_profiles.sh`.
+
 # ---- Pipeline ----
 OPENWEATHER_API_KEY=CHANGEME
 HISTORY_HOURS=72

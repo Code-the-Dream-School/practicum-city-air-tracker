@@ -1,0 +1,37 @@
+# Azure profile template for cloud-connected runs.
+# Generate `.env.local` and `.env.azure` with `bash scripts/generate_env_profiles.sh`.
+
+# ---- Pipeline ----
+OPENWEATHER_API_KEY=CHANGEME
+HISTORY_HOURS=72
+MAX_CALLS_PER_MINUTE=50
+CITIES_SOURCE=postgres
+CITIES_FILE=/app/configs/cities.csv
+
+# Container paths (Docker)
+DATA_DIR=/app/data
+RAW_DIR=/app/data/raw
+GOLD_DIR=/app/data/gold
+
+# PostgreSQL is the primary gold target
+USE_POSTGRES=1
+WRITE_GOLD_PARQUET=0
+WRITE_GOLD_AZURE_BLOB=0
+POSTGRES_HOST=YOUR_SERVER.postgres.database.azure.com
+POSTGRES_PORT=5432
+POSTGRES_DB=postgres
+POSTGRES_USER=YOUR_USER@YOUR_SERVER
+POSTGRES_PASSWORD=YOUR_PASSWORD
+POSTGRES_SSLMODE=require
+POSTGRES_SSLROOTCERT=
+ALEMBIC_DATABASE_URL=
+
+# Azure Blob publishing
+AZURE_STORAGE_CONNECTION_STRING=
+AZURE_STORAGE_ACCOUNT_URL=
+AZURE_STORAGE_CREDENTIAL=
+AZURE_BLOB_CONTAINER=gold
+AZURE_BLOB_PATH=exports/{table_name}.parquet
+
+# ---- Dashboard ----
+DASHBOARD_DATA_PATH=/app/data/gold/air_pollution_gold.parquet
