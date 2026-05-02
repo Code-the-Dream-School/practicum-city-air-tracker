@@ -74,8 +74,8 @@ sequenceDiagram
 
 Note:
 
-- `scheduler.py` is currently a thin APScheduler-compatible wrapper around the shared orchestration runner.
-- It does not yet define recurring job registration or cadence configuration by itself.
+- `scheduler.py` is a temporary compatibility wrapper; Prefect is now the active orchestration direction.
+- Recurring job registration and cadence configuration are follow-up capabilities to be implemented via Prefect deployments.
 
 ## 2. Seed Cities Flow
 
@@ -406,5 +406,6 @@ The main happy-path function chain for the ETL pipeline is:
 - The handoff from extract to transform to load is not DB-to-DB. It happens as Python objects and a pandas DataFrame in memory.
 - `raw_dir` is still passed around by orchestration, but `fetch_air_pollution_history()` currently ignores it.
 - Local Parquet and Azure Blob publishing are optional secondary outputs; PostgreSQL remains the primary gold-data target.
-- APScheduler integration is scaffolded through `scheduler.py`, but configurable recurring scheduling is still a follow-up capability.
+- Prefect is the active orchestration direction; `scheduler.py` remains as a temporary compatibility shim during the transition.
+- Configurable recurring scheduling via Prefect deployments is a follow-up capability.
 - The dashboard backend reads only from `air_pollution_gold`; it does not call pipeline code directly.
