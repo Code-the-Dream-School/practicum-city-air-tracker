@@ -1,6 +1,7 @@
 import os
 from urllib.parse import quote, urlencode
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +39,13 @@ class Settings(BaseSettings):
     azure_blob_container: str = "gold"
     azure_blob_path: str = "exports/{table_name}.parquet"
 
+    # Prefect scheduling
+    prefect_schedule_enabled: bool = False
+    prefect_schedule_type: str | None = None
+    prefect_interval_minutes: int | None = None
+    prefect_cron: str | None = None
+    prefect_schedule_timezone: str = "UTC"
+
     model_config = SettingsConfigDict(env_file=_resolve_env_file(), extra="ignore")
 
     @property
@@ -58,6 +66,49 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{user}:{password}"
             f"@{self.postgres_host}:{self.postgres_port}/{database}{query}"
         )
+
+    @field_validator("prefect_schedule_type", mode="after")
+    @classmethod
+    def validate_schedule_type_value(cls, v, info):
+        """Validate that schedule_type is one of supported types if scheduling is enabled."""
+        if not info.data.get("prefect_schedule_enabled"):
+            return v
+        if v and v not in ("interval", "cron"):
+            raise ValueError(
+                f"prefect_schedule_type must be one of ['interval', 'cron'], got {v!r}"
+            )
+        return v
+
+    def validate_schedule_settings(self) -> None:
+        """
+        Validate Prefect schedule configuration.
+        
+        Raises:
+            ValueError: if schedule configuration is invalid
+        """
+        if not self.prefect_schedule_enabled:
+            # If scheduling is disabled, other settings are optional
+            return
+
+        # Scheduling is enabled; validate required fields
+        if not self.prefect_schedule_type:
+            raise ValueError("prefect_schedule_type must be set when prefect_schedule_enabled is True")
+
+        if self.prefect_schedule_type == "interval":
+            if self.prefect_interval_minutes is None:
+                raise ValueError(
+                    "prefect_interval_minutes must be set when prefect_schedule_type is 'interval'"
+                )
+            if self.prefect_interval_minutes <= 0:
+                raise ValueError(
+                    f"prefect_interval_minutes must be positive, got {self.prefect_interval_minutes}"
+                )
+
+        if self.prefect_schedule_type == "cron":
+            if self.prefect_cron is None:
+                raise ValueError("prefect_cron must be set when prefect_schedule_type is 'cron'")
+            if not self.prefect_cron.strip():
+                raise ValueError("prefect_cron cannot be empty")
 
 
 settings = Settings()
