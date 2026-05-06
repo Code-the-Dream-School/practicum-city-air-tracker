@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 
@@ -16,16 +17,23 @@ from ..extract.openweather_air_pollution import (
     cities_table,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
+
 
 log = get_logger(__name__)
 
 
-def load_raw_responses_by_pipeline_run_id(pipeline_run_id: int) -> list[RawAirPollutionRecord]:
+def load_raw_responses_by_pipeline_run_id(
+    pipeline_run_id: int, engine: Engine | None = None
+) -> list[RawAirPollutionRecord]:
     """
     Load all raw air pollution responses for a given pipeline run from PostgreSQL.
 
     Args:
         pipeline_run_id: Foreign key to pipeline_runs table
+        engine: Optional SQLAlchemy engine. If not provided, creates a new engine
+                to connect to the configured PostgreSQL database.
 
     Returns:
         List of RawAirPollutionRecord ordered by city_id, then request time window
@@ -33,7 +41,8 @@ def load_raw_responses_by_pipeline_run_id(pipeline_run_id: int) -> list[RawAirPo
     Raises:
         ValueError: if pipeline_run_id doesn't exist in the database
     """
-    engine = _build_postgres_engine()
+    if engine is None:
+        engine = _build_postgres_engine()
 
     with engine.begin() as connection:
         # Join raw responses with cities to get city and country_code

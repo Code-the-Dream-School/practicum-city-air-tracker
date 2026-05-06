@@ -13,6 +13,7 @@ import pipeline.extract.geocoding as geocoding_module
 import pipeline.extract.openweather_air_pollution as air_module
 import pipeline.load.storage as storage_module
 import pipeline.orchestration as orchestration
+import pipeline.repository.raw_air_pollution as repository_module
 import pipeline.run_tracking as run_tracking
 
 
@@ -144,6 +145,7 @@ def db_native_pipeline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         air_module,
         run_tracking,
         storage_module,
+        repository_module,
     ):
         monkeypatch.setattr(module, "_build_postgres_engine", lambda engine=engine: engine)
 
