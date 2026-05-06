@@ -12,6 +12,7 @@ from pipeline.extract.cities import read_cities
 from pipeline.extract.geocoding import geocode_city
 from pipeline.extract.openweather_air_pollution import RawAirPollutionRecord, fetch_air_pollution_history
 from pipeline.load.storage import PublishResult, publish_outputs
+from pipeline.repository.raw_air_pollution import load_raw_responses_by_pipeline_run_id
 from pipeline.run_tracking import PipelineRunStatusUpdate, create_pipeline_run, update_pipeline_run_status
 from pipeline.transform.openweather_air_pollution_transform import build_gold_from_raw_records
 
@@ -25,7 +26,6 @@ class PipelineRunResult:
     run_id: str
     source: str
     history_hours: int
-    raw_records: list[RawAirPollutionRecord]
     gold_path: Path | None
     azure_blob_path: str | None
     postgres_table: str | None
@@ -76,7 +76,31 @@ def run_extract_stage(
     return raw_records, len(cities)
 
 
-def run_transform_stage(raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
+def run_transform_stage(pipeline_run_id: int, run_id: str) -> pd.DataFrame:
+    """
+    Run transform stage by loading raw responses from PostgreSQL.
+    
+    Args:
+        pipeline_run_id: Identifier for this pipeline run (foreign key)
+        run_id: Human-readable run identifier for logging
+    
+    Returns:
+        Gold DataFrame
+    """
+    log.debug(
+        "Loading raw responses from PostgreSQL",
+        extra={"pipeline_run_id": pipeline_run_id, "run_id": run_id},
+    )
+    raw_records = load_raw_responses_by_pipeline_run_id(pipeline_run_id)
+    
+    log.debug(
+        "Transforming raw responses to gold",
+        extra={
+            "pipeline_run_id": pipeline_run_id,
+            "run_id": run_id,
+            "raw_record_count": len(raw_records),
+        },
+    )
     return build_gold_from_raw_records(raw_records=raw_records)
 
 
@@ -111,7 +135,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
         },
     )
     city_count = 0
-    raw_records: list[RawAirPollutionRecord] = []
+    raw_response_count = 0
 
     try:
         log.info(
@@ -125,21 +149,22 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             run_id=run_id,
             pipeline_run_id=pipeline_run_id,
         )
+        raw_response_count = len(raw_records)
         log.info(
             "Extract stage complete",
             extra={
                 "run_id": run_id,
                 "pipeline_run_id": pipeline_run_id,
                 "city_count": city_count,
-                "raw_response_count": len(raw_records),
+                "raw_response_count": raw_response_count,
             },
         )
 
         log.info(
             "Transform stage starting",
-            extra={"run_id": run_id, "pipeline_run_id": pipeline_run_id, "raw_response_count": len(raw_records)},
+            extra={"run_id": run_id, "pipeline_run_id": pipeline_run_id, "raw_response_count": raw_response_count},
         )
-        gold_df = run_transform_stage(raw_records=raw_records)
+        gold_df = run_transform_stage(pipeline_run_id=pipeline_run_id, run_id=run_id)
         if not gold_df.empty:
             gold_df["pipeline_run_id"] = pipeline_run_id
         log.info(
@@ -169,7 +194,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             PipelineRunStatusUpdate(
                 status="succeeded",
                 city_count=city_count,
-                raw_response_count=len(raw_records),
+                raw_response_count=raw_response_count,
                 gold_row_count=len(gold_df),
                 finished_at=datetime.now(timezone.utc),
             ),
@@ -180,7 +205,6 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             run_id=run_id,
             source=source,
             history_hours=resolved_history_hours,
-            raw_records=raw_records,
             gold_path=publish_result.gold_path,
             azure_blob_path=publish_result.azure_blob_path,
             postgres_table=publish_result.table_name,
@@ -193,7 +217,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
                 "run_id": run_id,
                 "pipeline_run_id": result.pipeline_run_id,
                 "city_count": city_count,
-                "raw_response_count": len(raw_records),
+                "raw_response_count": raw_response_count,
                 "gold_row_count": result.rows,
                 "postgres_table": result.postgres_table,
                 "gold_path": str(result.gold_path) if result.gold_path is not None else None,
@@ -209,7 +233,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
                 "pipeline_run_id": pipeline_run_id,
                 "source": source,
                 "city_count": city_count or None,
-                "raw_response_count": len(raw_records) or None,
+                "raw_response_count": raw_response_count or None,
             },
         )
         update_pipeline_run_status(
@@ -217,7 +241,7 @@ def run_pipeline_job(source: str = "openweather", history_hours: int | None = No
             PipelineRunStatusUpdate(
                 status="failed",
                 city_count=city_count or None,
-                raw_response_count=len(raw_records) or None,
+                raw_response_count=raw_response_count or None,
                 error_message=str(exc),
                 finished_at=datetime.now(timezone.utc),
             ),

@@ -165,8 +165,30 @@ def fetch_air_pollution_history(
             payload_json = existing["payload_json"]
             if isinstance(payload_json, str):
                 payload_json = json.loads(payload_json)
+            
+            # Update existing record if this is a reuse from a different pipeline_run
+            if existing["pipeline_run_id"] != pipeline_run_id:
+                connection.execute(
+                    raw_air_pollution_responses_table.update()
+                    .where(raw_air_pollution_responses_table.c.id == existing["id"])
+                    .values(pipeline_run_id=pipeline_run_id)
+                )
+            
             return _build_record(
-                row=existing,
+                row=type("Row", (), {
+                    "id": existing["id"],
+                    "pipeline_run_id": pipeline_run_id,
+                    "city_id": existing["city_id"],
+                    "geo_id": existing["geo_id"],
+                    "lat": existing["lat"],
+                    "lon": existing["lon"],
+                    "request_url": existing["request_url"],
+                    "request_start_utc": existing["request_start_utc"],
+                    "request_end_utc": existing["request_end_utc"],
+                    "status_code": existing["status_code"],
+                    "record_count": existing["record_count"],
+                    "fetched_at": existing["fetched_at"],
+                })(),
                 city=city,
                 country_code=country_code,
                 payload_json=payload_json,
