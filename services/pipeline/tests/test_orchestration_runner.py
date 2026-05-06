@@ -16,6 +16,8 @@ import pipeline.orchestration as orchestration
 def test_run_pipeline_job_is_importable_and_returns_result(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
+    from datetime import datetime, timezone
+
     monkeypatch.setattr(orchestration.settings, "cities_file", str(tmp_path / "cities.csv"))
     monkeypatch.setattr(orchestration.settings, "cities_source", "postgres")
     monkeypatch.setattr(orchestration.settings, "raw_dir", str(tmp_path / "raw"))
@@ -47,6 +49,29 @@ def test_run_pipeline_job_is_importable_and_returns_result(
             fetched_at=kwargs["end"],
         )
 
+    def fake_load_raw_responses_by_pipeline_run_id(pipeline_run_id: int) -> list[RawAirPollutionRecord]:
+        captured["load_raw_pipeline_run_id"] = pipeline_run_id
+        start_time = captured["fetch_kwargs"]["start"]
+        end_time = captured["fetch_kwargs"]["end"]
+        return [
+            RawAirPollutionRecord(
+                raw_response_id=1,
+                pipeline_run_id=101,
+                city_id=1,
+                city="Toronto",
+                country_code="CA",
+                lat=43.6535,
+                lon=-79.3839,
+                geo_id="Toronto,CA:43.6535,-79.3839",
+                request_start_utc=start_time,
+                request_end_utc=end_time,
+                status_code=200,
+                record_count=1,
+                payload_json={"list": []},
+                fetched_at=end_time,
+            )
+        ]
+
     def fake_build_gold_from_raw_records(*, raw_records: list[RawAirPollutionRecord]) -> pd.DataFrame:
         captured["raw_records"] = raw_records
         return pd.DataFrame([{"geo_id": "Toronto,CA", "ts": "2026-03-17T00:00:00Z"}])
@@ -62,6 +87,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     monkeypatch.setattr(orchestration, "read_cities", fake_read_cities)
     monkeypatch.setattr(orchestration, "geocode_city", lambda **_: SimpleNamespace(lat=43.6535, lon=-79.3839))
     monkeypatch.setattr(orchestration, "fetch_air_pollution_history", fake_fetch_air_pollution_history)
+    monkeypatch.setattr(orchestration, "load_raw_responses_by_pipeline_run_id", fake_load_raw_responses_by_pipeline_run_id)
     monkeypatch.setattr(orchestration, "build_gold_from_raw_records", fake_build_gold_from_raw_records)
     monkeypatch.setattr(orchestration, "publish_outputs", fake_publish_outputs)
     monkeypatch.setattr(orchestration, "create_pipeline_run", lambda **kwargs: 101)
@@ -78,6 +104,7 @@ def test_run_pipeline_job_is_importable_and_returns_result(
     assert result.azure_blob_path is None
     assert result.postgres_table == "air_pollution_gold"
     assert captured["cities_path"] is None
+    assert captured["load_raw_pipeline_run_id"] == 101
     assert len(captured["raw_records"]) == 1
     assert captured["raw_records"][0].city == "Toronto"
     assert captured["fetch_kwargs"]["pipeline_run_id"] == 101
@@ -178,9 +205,30 @@ def _make_monkeypatched_run(monkeypatch, tmp_path, *, inject_failure: Optional[E
     def fake_publish_outputs(**kwargs):
         return PublishResult(table_name="air_pollution_gold", gold_path=None, rows=1)
 
+    def fake_load_raw_responses_by_pipeline_run_id(pipeline_run_id: int) -> list[RawAirPollutionRecord]:
+        return [
+            RawAirPollutionRecord(
+                raw_response_id=1,
+                pipeline_run_id=pipeline_run_id,
+                city_id=1,
+                city="Toronto",
+                country_code="CA",
+                lat=43.6535,
+                lon=-79.3839,
+                geo_id="Toronto,CA:43.6535,-79.3839",
+                request_start_utc=__import__("datetime").datetime(2026, 3, 16, 0, 0, 0, tzinfo=__import__("datetime").timezone.utc),
+                request_end_utc=__import__("datetime").datetime(2026, 3, 17, 0, 0, 0, tzinfo=__import__("datetime").timezone.utc),
+                status_code=200,
+                record_count=1,
+                payload_json={"list": []},
+                fetched_at=__import__("datetime").datetime(2026, 3, 17, 0, 0, 0, tzinfo=__import__("datetime").timezone.utc),
+            )
+        ]
+
     monkeypatch.setattr(orchestration, "read_cities", fake_read_cities)
     monkeypatch.setattr(orchestration, "geocode_city", lambda **_: SimpleNamespace(lat=43.6535, lon=-79.3839))
     monkeypatch.setattr(orchestration, "fetch_air_pollution_history", fake_fetch_air_pollution_history)
+    monkeypatch.setattr(orchestration, "load_raw_responses_by_pipeline_run_id", fake_load_raw_responses_by_pipeline_run_id)
     monkeypatch.setattr(orchestration, "build_gold_from_raw_records", fake_build_gold)
     monkeypatch.setattr(orchestration, "publish_outputs", fake_publish_outputs)
     monkeypatch.setattr(orchestration, "create_pipeline_run", lambda **kwargs: 101)
