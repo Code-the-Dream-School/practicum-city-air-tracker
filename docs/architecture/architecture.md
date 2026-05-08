@@ -8,7 +8,7 @@ skinparam componentStyle rectangle
 
 package "City Air Tracker (Monorepo)" {
   [Pipeline CLI\n(run_pipeline.py -> pipeline.cli)] as cli
-  [Scheduler Entrypoint\n(orchestration/scheduler.py)] as sched
+  [Prefect Runtime\n(pipeline/prefect_runtime.py)] as prefect
   component "Shared Orchestration Runner\norchestration/__init__.py" as orch
   component "Cities Reader / Seeder\ncities.py" as citiesmod
   component "Geocoding\n(OW Geocoding API)\ngeocoding.py" as geo
@@ -26,7 +26,7 @@ package "City Air Tracker (Monorepo)" {
 }
 
 cli --> orch
-sched --> orch
+prefect --> orch
 orch --> citiesmod
 citiesmod --> cities : read active cities / seed from CSV
 orch --> geo

@@ -4,14 +4,13 @@ This guide describes the current runtime architecture for the City Air Tracker a
 
 ## Scheduling
 
-The scheduling layer is intentionally thin. The shared orchestration runner lives in `services/pipeline/src/pipeline/orchestration/__init__.py`. The active orchestration path is the Prefect runtime module in `services/pipeline/src/pipeline/prefect_runtime.py`, while `services/pipeline/src/pipeline/orchestration/scheduler.py` remains as a temporary compatibility wrapper.
+The scheduling layer is intentionally thin. The shared orchestration runner lives in `services/pipeline/src/pipeline/orchestration/__init__.py`. The active orchestration path is the Prefect runtime module in `services/pipeline/src/pipeline/prefect_runtime.py`.
 
 ### How scheduling integrates
 
 - `services/pipeline/run_pipeline.py` is the top-level script entrypoint.
 - `services/pipeline/src/pipeline/cli.py` parses command-line arguments and calls the shared `run_pipeline_job(...)`.
 - `services/pipeline/src/pipeline/prefect_runtime.py` exposes a Prefect flow wrapper around the shared `run_pipeline_job(...)`.
-- `services/pipeline/src/pipeline/orchestration/scheduler.py` remains as a temporary compatibility wrapper for older scheduler-style imports.
 - `services/pipeline/src/pipeline/orchestration/__init__.py` contains the actual pipeline flow.
 
 This means manual CLI runs and Prefect-managed runs use the same orchestration path instead of duplicating pipeline logic.
@@ -22,13 +21,7 @@ This means manual CLI runs and Prefect-managed runs use the same orchestration p
 
 - Prefect flow wrapper around the shared orchestration runner.
 - Delegates directly to `pipeline.orchestration.run_pipeline_job(...)`.
-- Provides the runtime entrypoint for `python -m pipeline.prefect_runtime` and future Prefect-managed execution.
-
-`pipeline.orchestration.scheduler.run_pipeline_job(source="openweather", history_hours=None)`
-
-- Thin temporary compatibility wrapper.
-- Delegates directly to `pipeline.orchestration.run_pipeline_job(...)`.
-- Preserved so older scheduler-style imports still work during the Prefect transition.
+- Provides the runtime entrypoint for `python -m pipeline.prefect_runtime` and Prefect-managed execution.
 
 `pipeline.orchestration.run_pipeline_job(source="openweather", history_hours=None)`
 
@@ -44,7 +37,6 @@ This means manual CLI runs and Prefect-managed runs use the same orchestration p
 
 ### How scheduling can be tested
 
-- `services/pipeline/tests/test_orchestration_scheduler.py` verifies the scheduler wrapper delegates correctly.
 - `services/pipeline/tests/test_prefect_runtime.py` verifies the Prefect runtime wrapper delegates correctly.
 - `services/pipeline/tests/test_orchestration_runner.py` verifies the shared orchestration flow.
 - `services/pipeline/tests/test_run_pipeline_cities_file.py` verifies the CLI also routes into the shared runner.
@@ -208,7 +200,7 @@ The local stack is defined in `docker-compose.yml`.
 During this review, the architecture documentation was aligned with the current implementation in these areas:
 
 - the system is now documented as DB-first rather than file-first
-- the shared orchestration runner and scheduler-facing wrapper are both represented
+- the shared orchestration runner, manual CLI path, and Prefect runtime path are all represented
 - load diagrams now include optional local Parquet and optional Azure Blob publishing
 - the Docker Compose architecture now reflects `azurite` and `azurestorageexplorer`
 
