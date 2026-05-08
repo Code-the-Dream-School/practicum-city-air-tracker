@@ -4,7 +4,7 @@
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 2 0 obj
-<< /Length 2659 >>
+<< /Length 2715 >>
 stream
 BT
 /F1 16 Tf
@@ -34,10 +34,10 @@ BT
 (The scheduling layer is intentionally thin. The shared orchestration runner lives in) Tj
 0 -17 Td
 /F1 11 Tf
-(`services/pipeline/src/pipeline/orchestration/__init__.py`, and the scheduler-facing wrapper) Tj
+(`services/pipeline/src/pipeline/orchestration/__init__.py`. The active orchestration path is) Tj
 0 -17 Td
 /F1 11 Tf
-(lives in `services/pipeline/src/pipeline/orchestration/scheduler.py`.) Tj
+(the Prefect runtime module in `services/pipeline/src/pipeline/prefect_runtime.py`.) Tj
 0 -17 Td
 /F1 11 Tf
 () Tj
@@ -58,10 +58,10 @@ BT
 (`run_pipeline_job\(...\)`.) Tj
 0 -17 Td
 /F1 11 Tf
-(- `services/pipeline/src/pipeline/orchestration/scheduler.py` exposes the same) Tj
+(- `services/pipeline/src/pipeline/prefect_runtime.py` exposes a Prefect flow wrapper around the) Tj
 0 -17 Td
 /F1 11 Tf
-(`run_pipeline_job\(...\)` for scheduler use.) Tj
+(shared `run_pipeline_job\(...\)`.) Tj
 0 -17 Td
 /F1 11 Tf
 (- `services/pipeline/src/pipeline/orchestration/__init__.py` contains the actual pipeline flow.) Tj
@@ -70,10 +70,10 @@ BT
 () Tj
 0 -17 Td
 /F1 11 Tf
-(This means manual CLI runs and future APScheduler-triggered runs use the same orchestration) Tj
+(This means manual CLI runs and Prefect-managed runs use the same orchestration path instead of) Tj
 0 -17 Td
 /F1 11 Tf
-(path instead of duplicating pipeline logic.) Tj
+(duplicating pipeline logic.) Tj
 0 -17 Td
 /F1 11 Tf
 () Tj
@@ -85,19 +85,22 @@ BT
 () Tj
 0 -17 Td
 /F1 11 Tf
-(`pipeline.orchestration.scheduler.run_pipeline_job\(source="openweather", history_hours=None\)`) Tj
+(`pipeline.prefect_runtime.run_pipeline_flow\(source="openweather", history_hours=None\)`) Tj
 0 -17 Td
 /F1 11 Tf
 () Tj
 0 -17 Td
 /F1 11 Tf
-(- Thin scheduler-compatible wrapper.) Tj
+(- Prefect flow wrapper around the shared orchestration runner.) Tj
 0 -17 Td
 /F1 11 Tf
 (- Delegates directly to `pipeline.orchestration.run_pipeline_job\(...\)`.) Tj
 0 -17 Td
 /F1 11 Tf
-(- Designed so APScheduler can call it without knowing pipeline internals.) Tj
+(- Provides the runtime entrypoint for `python -m pipeline.prefect_runtime` and Prefect-managed) Tj
+0 -17 Td
+/F1 11 Tf
+(execution.) Tj
 0 -17 Td
 /F1 11 Tf
 () Tj
@@ -125,18 +128,18 @@ BT
 0 -17 Td
 /F1 11 Tf
 (`pipeline.cli.main\(\)`) Tj
-0 -17 Td
-/F1 11 Tf
-() Tj
 ET
 endstream
 endobj
 3 0 obj
-<< /Length 2452 >>
+<< /Length 2447 >>
 stream
 BT
 /F1 16 Tf
 50 790 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
 /F1 11 Tf
 (- CLI entrypoint for local or manual execution.) Tj
 0 -17 Td
@@ -156,7 +159,7 @@ BT
 () Tj
 0 -17 Td
 /F1 11 Tf
-(- `services/pipeline/tests/test_orchestration_scheduler.py` verifies the scheduler wrapper) Tj
+(- `services/pipeline/tests/test_prefect_runtime.py` verifies the Prefect runtime wrapper) Tj
 0 -17 Td
 /F1 11 Tf
 (delegates correctly.) Tj
@@ -183,7 +186,7 @@ BT
 () Tj
 0 -17 Td
 /F1 11 Tf
-(- APScheduler-compatible entrypoints exist, but recurring configurable schedule registration is) Tj
+(- The Prefect runtime entrypoint exists, but recurring configurable schedule registration is) Tj
 0 -17 Td
 /F1 11 Tf
 (still a follow-up feature.) Tj
@@ -253,9 +256,6 @@ BT
 0 -17 Td
 /F1 11 Tf
 (- Returns the list of raw records plus the number of processed cities.) Tj
-0 -17 Td
-/F1 11 Tf
-() Tj
 ET
 endstream
 endobj
@@ -265,6 +265,9 @@ stream
 BT
 /F1 16 Tf
 50 790 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
 /F1 13 Tf
 (`extract.cities.read_cities\(path=None\)`) Tj
 0 -17 Td
@@ -381,9 +384,6 @@ BT
 0 -20 Td
 /F1 13 Tf
 (`run_transform_stage\(raw_records\)`) Tj
-0 -17 Td
-/F1 11 Tf
-() Tj
 ET
 endstream
 endobj
@@ -393,6 +393,9 @@ stream
 BT
 /F1 16 Tf
 50 790 Td
+/F1 11 Tf
+() Tj
+0 -17 Td
 /F1 11 Tf
 (- Converts the extracted raw records into the gold analytical DataFrame.) Tj
 0 -17 Td
@@ -509,18 +512,18 @@ BT
 0 -17 Td
 /F1 11 Tf
 (- Returns a `PublishResult` describing which targets were used.) Tj
-0 -17 Td
-/F1 11 Tf
-() Tj
 ET
 endstream
 endobj
 6 0 obj
-<< /Length 2243 >>
+<< /Length 2210 >>
 stream
 BT
 /F1 16 Tf
 50 790 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
 /F1 13 Tf
 (`load.storage._upsert_gold_rows\(engine, gold_df, table_name\)`) Tj
 0 -17 Td
@@ -637,18 +640,18 @@ BT
 0 -17 Td
 /F1 11 Tf
 () Tj
-0 -17 Td
-/F1 11 Tf
-(- Runs the application dashboard.) Tj
 ET
 endstream
 endobj
 7 0 obj
-<< /Length 2010 >>
+<< /Length 2114 >>
 stream
 BT
 /F1 16 Tf
 50 790 Td
+/F1 11 Tf
+(- Runs the application dashboard.) Tj
+0 -17 Td
 /F1 11 Tf
 (- Reads from PostgreSQL and exposes the dashboard interface on port `8501`.) Tj
 0 -17 Td
@@ -728,7 +731,10 @@ BT
 (- the system is now documented as DB-first rather than file-first) Tj
 0 -17 Td
 /F1 11 Tf
-(- the shared orchestration runner and scheduler-facing wrapper are both represented) Tj
+(- the shared orchestration runner, manual CLI path, and Prefect runtime path are all) Tj
+0 -17 Td
+/F1 11 Tf
+(represented) Tj
 0 -17 Td
 /F1 11 Tf
 (- load diagrams now include optional local Parquet and optional Azure Blob publishing) Tj
@@ -740,13 +746,13 @@ BT
 () Tj
 0 -17 Td
 /F1 11 Tf
-(The remaining known gap is not documentation drift, but functionality: recurring APScheduler) Tj
+(The remaining known gap is not documentation drift, but functionality: recurring Prefect) Tj
 0 -17 Td
 /F1 11 Tf
-(schedule configuration is still a follow-up feature on top of the current scheduler-compatible) Tj
+(schedule configuration is still a follow-up feature on top of the current shared runner and) Tj
 0 -17 Td
 /F1 11 Tf
-(entrypoint.) Tj
+(Prefect runtime entrypoint.) Tj
 ET
 endstream
 endobj
@@ -779,21 +785,21 @@ xref
 0000000000 65535 f 
 0000000015 00000 n 
 0000000085 00000 n 
-0000002796 00000 n 
-0000005300 00000 n 
-0000007769 00000 n 
-0000010556 00000 n 
-0000012851 00000 n 
-0000014913 00000 n 
-0000015005 00000 n 
-0000015131 00000 n 
-0000015258 00000 n 
-0000015385 00000 n 
-0000015512 00000 n 
-0000015639 00000 n 
-0000015766 00000 n 
+0000002852 00000 n 
+0000005351 00000 n 
+0000007820 00000 n 
+0000010607 00000 n 
+0000012869 00000 n 
+0000015035 00000 n 
+0000015127 00000 n 
+0000015253 00000 n 
+0000015380 00000 n 
+0000015507 00000 n 
+0000015634 00000 n 
+0000015761 00000 n 
+0000015888 00000 n 
 trailer
 << /Size 16 /Root 15 0 R >>
 startxref
-15816
+15938
 %%EOF

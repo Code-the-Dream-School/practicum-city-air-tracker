@@ -1,0 +1,12 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+
+_PACKAGE_DIR = Path(__file__).resolve().parent
+_SRC_PACKAGE_DIR = _PACKAGE_DIR.parent / "services" / "pipeline" / "src" / "pipeline"
+
+# Allow repo-root module execution (python -m pipeline.cli) without depending
+# on pytest path injection or an editable install being present first.
+if _SRC_PACKAGE_DIR.is_dir():
+    __path__.append(str(_SRC_PACKAGE_DIR))

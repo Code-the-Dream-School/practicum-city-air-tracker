@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -6,6 +7,32 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def _resolve_env_file() -> str:
     return os.getenv("ENV_FILE", ".env.local")
+
+
+def _repo_root() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return Path.cwd()
+
+
+def _using_container_runtime() -> bool:
+    return Path("/app").exists() and Path.cwd().as_posix().startswith("/app")
+
+
+def _host_localize_app_path(value: str) -> str:
+    if not value.startswith("/app/") or _using_container_runtime():
+        return value
+
+    relative_path = Path(value).relative_to("/app")
+    return str(_repo_root() / relative_path)
+
+
+def _host_localize_postgres_host(value: str) -> str:
+    if value != "postgres" or _using_container_runtime():
+        return value
+    return "localhost"
 
 
 class Settings(BaseSettings):
@@ -39,6 +66,13 @@ class Settings(BaseSettings):
     azure_blob_path: str = "exports/{table_name}.parquet"
 
     model_config = SettingsConfigDict(env_file=_resolve_env_file(), extra="ignore")
+
+    def model_post_init(self, __context) -> None:
+        object.__setattr__(self, "cities_file", _host_localize_app_path(self.cities_file))
+        object.__setattr__(self, "data_dir", _host_localize_app_path(self.data_dir))
+        object.__setattr__(self, "raw_dir", _host_localize_app_path(self.raw_dir))
+        object.__setattr__(self, "gold_dir", _host_localize_app_path(self.gold_dir))
+        object.__setattr__(self, "postgres_host", _host_localize_postgres_host(self.postgres_host))
 
     @property
     def postgres_sqlalchemy_url(self) -> str:

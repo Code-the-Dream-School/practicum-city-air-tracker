@@ -163,6 +163,8 @@ AZURE_BLOB_PATH=exports/{table_name}.parquet
 
 After your virtual environment is active and `.env.local` matches the values above:
 
+Use the CLI for manual local execution. Use the Prefect runtime only when you want a Prefect-managed run that still delegates to the same shared orchestration logic.
+
 1. Seed cities into PostgreSQL:
 
 ```bash
@@ -173,6 +175,12 @@ python -m pipeline.cli --seed-cities
 
 ```bash
 python -m pipeline.cli --source openweather --history-hours 72
+```
+
+Optional Prefect-managed run:
+
+```bash
+python -m pipeline.prefect_runtime --source openweather --history-hours 72
 ```
 
 3. Start the dashboard:

@@ -8,7 +8,7 @@ It is meant to answer: "when I run the app, which functions call which other fun
 The diagrams below cover:
 
 - pipeline CLI entrypoint
-- scheduler-compatible entrypoint
+- Prefect-managed entrypoint
 - city seeding flow
 - pipeline run orchestration
 - geocoding cache hit and miss behavior
@@ -54,27 +54,27 @@ sequenceDiagram
     Orch-->>CLI: PipelineRunResult
 ```
 
-## 1.1 Scheduler-Compatible Run Flow
+## 1.1 Prefect-Managed Run Flow
 
 Source file:
 
-- `services/pipeline/src/pipeline/orchestration/scheduler.py`
+- `services/pipeline/src/pipeline/prefect_runtime.py`
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Scheduler
-    participant Sched as orchestration.scheduler.run_pipeline_job
+    actor Prefect
+    participant Flow as prefect_runtime.run_pipeline_flow
     participant Orch as orchestration.run_pipeline_job
 
-    Scheduler->>Sched: run_pipeline_job(source, history_hours)
-    Sched->>Orch: run_pipeline_job(source, history_hours)
-    Orch-->>Sched: PipelineRunResult
+    Prefect->>Flow: run_pipeline_flow(source, history_hours)
+    Flow->>Orch: run_pipeline_job(source, history_hours)
+    Orch-->>Flow: PipelineRunResult
 ```
 
 Note:
 
-- `scheduler.py` is a temporary compatibility wrapper; Prefect is now the active orchestration direction.
+- Prefect is the active orchestration direction for managed runs.
 - Recurring job registration and cadence configuration are follow-up capabilities to be implemented via Prefect deployments.
 
 ## 2. Seed Cities Flow
@@ -406,6 +406,6 @@ The main happy-path function chain for the ETL pipeline is:
 - The handoff from extract to transform to load is not DB-to-DB. It happens as Python objects and a pandas DataFrame in memory.
 - `raw_dir` is still passed around by orchestration, but `fetch_air_pollution_history()` currently ignores it.
 - Local Parquet and Azure Blob publishing are optional secondary outputs; PostgreSQL remains the primary gold-data target.
-- Prefect is the active orchestration direction; `scheduler.py` remains as a temporary compatibility shim during the transition.
+- Prefect is the active orchestration direction for managed execution, while `pipeline.cli` remains the supported local/manual entrypoint.
 - Configurable recurring scheduling via Prefect deployments is a follow-up capability.
 - The dashboard backend reads only from `air_pollution_gold`; it does not call pipeline code directly.

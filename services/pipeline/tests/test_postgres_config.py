@@ -61,3 +61,19 @@ def test_postgres_sqlalchemy_url_urlencodes_special_characters():
     assert settings.postgres_sqlalchemy_url == (
         "postgresql+psycopg://cityair%40server:p%40ss%20word%3A%2F%21@db.example:5432/city%20air"
     )
+
+
+def test_settings_host_localize_docker_style_paths_for_repo_root_execution():
+    settings = Settings(
+        cities_file="/app/configs/cities.csv",
+        data_dir="/app/data",
+        raw_dir="/app/data/raw",
+        gold_dir="/app/data/gold",
+        postgres_host="postgres",
+    )
+
+    assert settings.cities_file.endswith("/configs/cities.csv")
+    assert settings.data_dir.endswith("/data")
+    assert settings.raw_dir.endswith("/data/raw")
+    assert settings.gold_dir.endswith("/data/gold")
+    assert settings.postgres_host == "localhost"
