@@ -34,6 +34,7 @@ Use `docs/setup/local_postgresql_first_workflow.md` for the consolidated local P
 
 Use `docs/setup/azure_postgresql_configuration.md` for managed Azure Database for PostgreSQL configuration guidance.
 Use `docs/setup/environment_profiles_guide.md` to keep separate local and Azure env files without overwriting your normal Docker settings.
+Use `docs/setup/dashboard_azure_deployment.md` for the GitHub Actions to Azure App Service dashboard deployment flow.
 Use `bash scripts/generate_env_profiles.sh` to create `.env.local` and `.env.azure` from the tracked templates in `configs/env/`.
 Use `ENV_FILE=.env.azure ...` when you want to run the app, migrations, or Docker Compose against the Azure profile.
 

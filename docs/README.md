@@ -13,6 +13,7 @@ Use these docs when you want to install, run, debug, or validate the project loc
 - `setup/environment_profiles_guide.md`
 - `setup/docker_and_compose_walkthrough.md`
 - `setup/github_quality_gates_setup.md`
+- `setup/dashboard_azure_deployment.md`
 
 ## Collaboration
 
